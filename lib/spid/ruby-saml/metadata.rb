@@ -3,6 +3,9 @@ require "rexml/xpath"
 require "net/https"
 require "uri"
 require "digest/md5"
+require "nokogiri"
+require "xml_security_new" #fa il require della nokogiri
+
 
 # Class to return SP metadata based on the settings requested.
 # Return this XML in a controller, then give that URL to the the 
@@ -24,7 +27,8 @@ module Spid
       end
 
       def generate(settings)
-        meta_doc = REXML::Document.new
+        #meta_doc = REXML::Document.new
+        meta_doc = ::XMLSecurityNew::Document.new
         root = meta_doc.add_element "md:EntityDescriptor", { 
             "xmlns:md"        => "urn:oasis:names:tc:SAML:2.0:metadata",
             "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace",
@@ -35,7 +39,8 @@ module Spid
         end
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
-            "WantAssertionsSigned"       => "true"
+            #"WantAssertionsSigned"       => "true",
+            "AuthnRequestSigned"         => "true"
 
         }
           name_identifier_formats = settings.name_identifier_format
@@ -67,7 +72,8 @@ module Spid
                 # Add this as a setting to create different bindings?
                 "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
                 "Location" => settings.assertion_consumer_service_url,
-                "index" => "1"
+                "index" => "0",
+                "isDefault" => "true"
             }
           end
           if settings.single_logout_service_url != nil
@@ -80,7 +86,63 @@ module Spid
                 "Location" => settings.single_logout_service_url
             }
           end
-        meta_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
+          #AttributeConsumingService
+          attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
+              "index" => "0",
+              "ServiceName" => "user_data"
+          }
+          settings.requested_attribute.each_with_index{ |attribute, index|
+            attr_cons_service.add_element "md:RequestedAttribute", {
+                "Name" => attribute
+            }
+          }
+          
+          #organization
+          organization = root.add_element "md:Organization"
+          org_name = organization.add_element "md:OrganizationName", {
+              "xml:lang" => "it"
+          }
+          org_name.text = settings.organization['org_name']
+          org_display_name = organization.add_element "md:OrganizationDisplayName", {
+              "xml:lang" => "it"
+          }
+          org_display_name.text = settings.organization['org_display_name']
+          org_url = organization.add_element "md:OrganizationURL", {
+              "xml:lang" => "it"
+          }
+          org_url.text = settings.organization['org_url']
+
+        #meta_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
+        meta_doc << REXML::XMLDecl.new("1.0", "UTF-8")
+
+        cert = settings.get_sp_cert
+        #SE SERVE ANCHE ENCRYPTION
+        # # Add KeyDescriptor if messages will be signed / encrypted
+        # 
+        # if cert
+        #   cert_text = Base64.encode64(cert.to_der).gsub("\n", '')
+        #   kd = sp_sso.add_element "md:KeyDescriptor", { "use" => "signing" }
+        #   ki = kd.add_element "ds:KeyInfo", {"xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"}
+        #   xd = ki.add_element "ds:X509Data"
+        #   xc = xd.add_element "ds:X509Certificate"
+        #   xc.text = cert_text
+
+        #   kd2 = sp_sso.add_element "md:KeyDescriptor", { "use" => "encryption" }
+        #   ki2 = kd2.add_element "ds:KeyInfo", {"xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"}
+        #   xd2 = ki2.add_element "ds:X509Data"
+        #   xc2 = xd2.add_element "ds:X509Certificate"
+        #   xc2.text = cert_text
+        # end
+
+        # embed signature
+        if settings.metadata_signed && settings.sp_private_key && settings.sp_cert
+          private_key = settings.get_sp_key
+          
+          meta_doc.sign_document(private_key, cert)
+        end
+
+
+
         ret = ""
         # pretty print the XML so IdP administrators can easily see what the SP supports
         meta_doc.write(ret, 1)
@@ -141,7 +203,7 @@ module Spid
         
         return nil unless meta_doc
         # first try POST
-        sso_element = REXML::XPath.first(meta_doc, "/md:EntityDescriptor/md:IDPSSODescriptor/md:#{service}[@Binding='#{HTTP_POST}']")
+        sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_POST}']")
         if !sso_element.nil? 
           @URL = sso_element.attributes["Location"]
           #Logging.debug "binding_select: POST to #{@URL}"
@@ -149,7 +211,7 @@ module Spid
         end
         
         # next try GET
-        sso_element = REXML::XPath.first(meta_doc, "/md:EntityDescriptor/md:IDPSSODescriptor/md:#{service}[@Binding='#{HTTP_GET}']")
+        sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_GET}']")
         if !sso_element.nil? 
           @URL = sso_element.attributes["Location"]
           Logging.debug "binding_select: GET from #{@URL}"
@@ -158,18 +220,14 @@ module Spid
         # other types we might want to add in the future:  SOAP, Artifact
       end
 
-      # Retrieve the remote IdP metadata from the URL or a cached copy 
-      # returns a REXML document of the metadata
-      def get_idp_metadata
-        return false if @settings.idp_metadata.nil?
-      
-        # Look up the metdata in cache first
-        id = Digest::MD5.hexdigest(@settings.idp_metadata)
 
-        uri = URI.parse(@settings.idp_metadata)
+      def fetch(uri_str, limit = 10)
+        # You should choose a better exception.
+        raise ArgumentError, 'too many HTTP redirects' if limit == 0
+
+        uri = URI.parse(uri_str)
         if uri.scheme == "http"
           response = Net::HTTP.get_response(uri)
-          meta_text = response.body
         elsif uri.scheme == "https"
           http = Net::HTTP.new(uri.host, uri.port)
           http.use_ssl = true
@@ -178,12 +236,39 @@ module Spid
           http.verify_mode = OpenSSL::SSL::VERIFY_NONE
           get = Net::HTTP::Get.new(uri.request_uri)
           response = http.request(get)
-          meta_text = response.body
         end
-        testo_response = meta_text.sub!(' xmlns:xml="http://www.w3.org/XML/1998/namespace"', '')
-        doc = REXML::Document.new(testo_response)
-        extract_certificate(doc)
-        return doc
+
+        case response
+        when Net::HTTPSuccess then
+          response
+        when Net::HTTPRedirection then
+          location = response['location']
+          warn "redirected to #{location}"
+          fetch(location, limit - 1)
+        else
+          response.value
+        end
+      end
+
+
+
+      # Retrieve the remote IdP metadata from the URL or a cached copy 
+      # returns a REXML document of the metadata
+      def get_idp_metadata
+        return false if @settings.idp_metadata.nil?
+      
+        # Look up the metdata in cache first
+        id = Digest::MD5.hexdigest(@settings.idp_metadata)
+        response = fetch(@settings.idp_metadata)
+        #meta_text = response.body
+        #testo_response = meta_text.sub!(' xmlns:xml="http://www.w3.org/XML/1998/namespace"', '') da errori
+        #uso nokogiri per cercare il certificato, uso la funzione che rimuove tutti i namespace 
+        doc_noko = Nokogiri::XML(response.body)
+        doc_noko.remove_namespaces!
+        extract_certificate(doc_noko)
+        doc_rexml = REXML::Document.new(doc_noko.to_xml)
+
+        return doc_rexml
 
         # USE OF CACHE WITH CERTIFICATE
         # lookup = @cache.read(id)
@@ -223,19 +308,21 @@ module Spid
       end
 
       def extract_certificate(meta_doc)
-
+        #ricerco il certificato con nokogiri
         # pull out the x509 tag
-        x509 = REXML::XPath.first(meta_doc, "/md:EntityDescriptor/md:IDPSSODescriptor"+"/md:KeyDescriptor"+"/ds:KeyInfo/ds:X509Data/ds:X509Certificate"
-            )
+        x509 = meta_doc.xpath("//EntityDescriptor//IDPSSODescriptor//KeyDescriptor//KeyInfo//X509Data//X509Certificate")
+
+        #x509 = REXML::XPath.first(meta_doc, "/md:EntityDescriptor/md:IDPSSODescriptor"+"/md:KeyDescriptor"+"/ds:KeyInfo/ds:X509Data/ds:X509Certificate")
         # If the IdP didn't specify the use attribute
         if x509.nil?
-          x509 = REXML::XPath.first(meta_doc, 
-                "/EntityDescriptor/IDPSSODescriptor" +
-              "/KeyDescriptor" +
-              "/ds:KeyInfo/ds:X509Data/ds:X509Certificate"
-            )
+          x509 = meta_doc.xpath("//EntityDescriptor//IDPSSODescriptor//KeyDescriptor//KeyInfo//X509Data//X509Certificate")
+          # x509 = REXML::XPath.first(meta_doc, 
+          #       "/EntityDescriptor/IDPSSODescriptor" +
+          #     "/KeyDescriptor" +
+          #     "/ds:KeyInfo/ds:X509Data/ds:X509Certificate"
+          #   )
         end
-        @settings.idp_cert = x509.text.gsub(/\n/, "").gsub(/\t/, "")
+        @settings.idp_cert = x509.children.to_s.gsub(/\n/, "").gsub(/\t/, "")
       end
 
       # construct the parameter list on the URL and return

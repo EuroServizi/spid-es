@@ -33,9 +33,11 @@ module Spid::Saml
       root.attributes['IssueInstant'] = time
       root.attributes['Version'] = "2.0"
       root.attributes['ProtocolBinding'] = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-      #root.attributes['AttributeConsumingServiceIndex'] = "2"
+      root.attributes['AttributeConsumingServiceIndex'] = "1"
       root.attributes['ForceAuthn'] = "false"
-      root.attributes['IsPassive'] = "false"
+      #root.attributes['IsPassive'] = "false"
+      #usato AssertionConsumerServiceURL e ProtocolBinding in alternativa, pag 8 regole tecniche
+      #root.attributes['AssertionConsumerServiceIndex'] = 1
 
       # Conditionally defined elements based on settings
       if @settings.assertion_consumer_service_url != nil
@@ -48,12 +50,25 @@ module Spid::Saml
 
       if @settings.issuer != nil
         issuer = root.add_element "saml2:Issuer", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        issuer.attributes['NameQualifier'] =  @settings.issuer
+        issuer.attributes['Format'] =  "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
         issuer.text = @settings.issuer
       end
+
+      #opzionale
+      if @settings.sp_name_qualifier != nil
+        subject = root.add_element "saml2:Subject", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        name_id = subject.add_element "saml2:NameID", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        name_id.attributes['Format'] = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
+        name_id.attributes['NameQualifier'] = @settings.sp_name_qualifier
+      end
+
+
+
       if @settings.name_identifier_format != nil
         root.add_element "saml2p:NameIDPolicy", { 
             # Might want to make AllowCreate a setting?
-            "AllowCreate"     => "true",
+            #{}"AllowCreate"     => "true",
             "Format"          => @settings.name_identifier_format[1],
             "SPNameQualifier" => @settings.sp_name_qualifier
         }
@@ -78,7 +93,7 @@ module Spid::Saml
 
       if @settings.requester_identificator != nil
         requester_identificator = root.add_element "saml2p:Scoping", { 
-          "ProxyCount" => "1"
+          "ProxyCount" => "0"
         }
         identificators = []
         @settings.requester_identificator.each_with_index{ |requester, index|

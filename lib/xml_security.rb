@@ -29,7 +29,7 @@ require "openssl"
 require 'nokogiri'
 require "digest/sha1"
 require "digest/sha2"
-require "Spid/ruby-saml/validation_error"
+require "spid/ruby-saml/validation_error"
 
 module XMLSecurity
 
