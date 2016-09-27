@@ -14,7 +14,7 @@ module Spid::Saml
     HTTP_POST = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
     HTTP_GET = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
     
-    attr_accessor :uuid, :request
+    attr_accessor :uuid, :request, :issue_instant
 
     def initialize( settings )
       @settings = settings
@@ -25,6 +25,7 @@ module Spid::Saml
       uuid = "_" + UUID.new.generate
       self.uuid = uuid
       time = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+      self.issue_instant = time
       # Create AuthnRequest root element using REXML 
       request_doc = REXML::Document.new
       request_doc.context[:attribute_quote] = :quote
