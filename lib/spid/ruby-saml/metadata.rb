@@ -5,7 +5,7 @@ require "uri"
 require "digest/md5"
 require "nokogiri"
 require "xml_security_new" #fa il require della nokogiri
-
+require "uuid"
 
 # Class to return SP metadata based on the settings requested.
 # Return this XML in a controller, then give that URL to the the 
@@ -20,6 +20,8 @@ module Spid
       HTTP_POST = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
       HTTP_GET = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
 
+      attr_accessor :uuid
+
       def initialize(settings=nil)
         if settings
           @settings = settings
@@ -31,15 +33,18 @@ module Spid
         meta_doc = ::XMLSecurityNew::Document.new
         root = meta_doc.add_element "md:EntityDescriptor", { 
             "xmlns:md"        => "urn:oasis:names:tc:SAML:2.0:metadata",
-            "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace",
-            "cacheDuration"   => "P1M" 
+            "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace"
         }
         if settings.issuer != nil
           root.attributes["entityID"] = settings.issuer
         end
+        uuid = "_" + UUID.new.generate
+        self.uuid = uuid
+        root.attributes["ID"] = uuid
+
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
-            #"WantAssertionsSigned"       => "true",
+            "WantAssertionsSigned"       => "true",
             "AuthnRequestSigned"         => "true"
 
         }
@@ -89,8 +94,11 @@ module Spid
           #AttributeConsumingService
           attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
               "index" => "0",
-              "ServiceName" => "user_data"
           }
+          service_name = attr_cons_service.add_element "md:ServiceName", {
+                "xml:lang" => "it"
+            }
+          service_name.text = "User Data"
           settings.requested_attribute.each_with_index{ |attribute, index|
             attr_cons_service.add_element "md:RequestedAttribute", {
                 "Name" => attribute
@@ -145,7 +153,7 @@ module Spid
 
         ret = ""
         # pretty print the XML so IdP administrators can easily see what the SP supports
-        meta_doc.write(ret, 1)
+        meta_doc.write(ret)
 
         #Logging.debug "Generated metadata:\n#{ret}"
 

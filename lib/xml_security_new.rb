@@ -113,7 +113,7 @@ module XMLSecurityNew
       #<KeyInfo />
       #<Object />
     #</Signature>
-    def sign_document(private_key, certificate, signature_method = RSA_SHA1, digest_method = SHA256)
+    def sign_document(private_key, certificate, signature_method = RSA_SHA256, digest_method = SHA256)
       noko = Nokogiri::XML(self.to_s) do |config|
         config.options = XMLSecurityNew::BaseDocument::NOKOGIRI_OPTIONS
       end

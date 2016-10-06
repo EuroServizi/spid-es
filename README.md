@@ -17,9 +17,9 @@ This is the first request you will get from the identity provider. It will hit y
         # Based on the IdP metadata, select the appropriate binding 
         # and return the action to perform to the controller
         meta = Spid::Saml::Metadata.new(get_saml_settings)
-        signature = get_signature(auth_request.uuid,auth_request.request,"http://www.w3.org/2000/09/xmldsig#rsa-sha1")
+        signature = get_signature(auth_request.uuid,auth_request.request,"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256")
         redirect meta.create_sso_request( auth_request.request, {   :RelayState   => request.uuid,
-                                                                  :SigAlg       => "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
+                                                                  :SigAlg       => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
                                                                   :Signature    => signature
                                                               } )
     end
