@@ -45,7 +45,7 @@ module Spid
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
             "WantAssertionsSigned"       => "true",
-            "AuthnRequestSigned"         => "true"
+            "AuthnRequestsSigned"         => "true"
 
         }
           name_identifier_formats = settings.name_identifier_format
