@@ -45,85 +45,89 @@ module Spid
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
             "WantAssertionsSigned"       => "true",
-            "AuthnRequestsSigned"         => "true"
+            "AuthnRequestsSigned"         => "1"
 
         }
-          name_identifier_formats = settings.name_identifier_format
-          if name_identifier_formats != nil
-            name_id = []
-            name_identifier_formats.each_with_index{ |format, index|
-              name_id[index] = sp_sso.add_element "md:NameIDFormat"
-              name_id[index].text = format
-            }
-            
-          end
-          if settings.sp_cert != nil
-            keyDescriptor = sp_sso.add_element "md:KeyDescriptor", {
-              "use" => "signing"
-            }
-            keyInfo = keyDescriptor.add_element "ds:KeyInfo", {
-              "xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"
-            }
-            x509Data = keyInfo.add_element "ds:X509Data"
-            x509Certificate = x509Data.add_element "ds:X509Certificate"
-            file = ""
-            File.foreach(settings.sp_cert){ |line|
-                                         file  += line unless (line.include?("RSA PUBLIC KEY") || line.include?("CERTIFICATE")) 
-                                       }
-            x509Certificate.text = file                            
-          end
-          if settings.assertion_consumer_service_url != nil
-            sp_sso.add_element "md:AssertionConsumerService", {
-                # Add this as a setting to create different bindings?
-                "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
-                "Location" => settings.assertion_consumer_service_url,
-                "index" => "0",
-                "isDefault" => "true"
-            }
-          end
-          if settings.single_logout_service_url != nil
-            sp_sso.add_element "md:SingleLogoutService", {
-                "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
-                "Location" => settings.single_logout_service_url
-            }
-            sp_sso.add_element "md:SingleLogoutService", {
-                "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
-                "Location" => settings.single_logout_service_url
-            }
-          end
-          #AttributeConsumingService
-          attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
-              "index" => "0",
+        if settings.sp_cert != nil
+          keyDescriptor = sp_sso.add_element "md:KeyDescriptor", {
+            "use" => "signing"
           }
-          service_name = attr_cons_service.add_element "md:ServiceName", {
-                "xml:lang" => "it"
-            }
-          service_name.text = "User Data"
-          settings.requested_attribute.each_with_index{ |attribute, index|
-            attr_cons_service.add_element "md:RequestedAttribute", {
-                "Name" => attribute
-            }
+          keyInfo = keyDescriptor.add_element "ds:KeyInfo", {
+            "xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"
+          }
+          x509Data = keyInfo.add_element "ds:X509Data"
+          x509Certificate = x509Data.add_element "ds:X509Certificate"
+          file = ""
+          File.foreach(settings.sp_cert){ |line|
+                                       file  += line unless (line.include?("RSA PUBLIC KEY") || line.include?("CERTIFICATE")) 
+                                     }
+          x509Certificate.text = file                            
+        end
+        if settings.single_logout_service_url != nil
+          sp_sso.add_element "md:SingleLogoutService", {
+              "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+              "Location" => settings.single_logout_service_url
+          }
+          sp_sso.add_element "md:SingleLogoutService", {
+              "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+              "Location" => settings.single_logout_service_url
+          }
+        end
+
+        name_identifier_formats = settings.name_identifier_format
+        if name_identifier_formats != nil
+          name_id = []
+          name_identifier_formats.each_with_index{ |format, index|
+            name_id[index] = sp_sso.add_element "md:NameIDFormat"
+            name_id[index].text = format
           }
           
-          #organization
-          organization = root.add_element "md:Organization"
-          org_name = organization.add_element "md:OrganizationName", {
+        end
+
+        if settings.assertion_consumer_service_url
+          sp_sso.add_element "md:AssertionConsumerService", {
+              "Binding" => settings.assertion_consumer_service_binding,
+              "Location" => settings.assertion_consumer_service_url,
+              "isDefault" => true,
+              "index" => 0
+          }
+        end
+
+        
+
+        #AttributeConsumingService
+        attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
+            "index" => "0",
+        }
+        service_name = attr_cons_service.add_element "md:ServiceName", {
               "xml:lang" => "it"
           }
-          org_name.text = settings.organization['org_name']
-          org_display_name = organization.add_element "md:OrganizationDisplayName", {
-              "xml:lang" => "it"
+        service_name.text = "User Data"
+        settings.requested_attribute.each_with_index{ |attribute, index|
+          attr_cons_service.add_element "md:RequestedAttribute", {
+              "Name" => attribute
           }
-          org_display_name.text = settings.organization['org_display_name']
-          org_url = organization.add_element "md:OrganizationURL", {
-              "xml:lang" => "it"
-          }
-          org_url.text = settings.organization['org_url']
+        }
+        
+        #organization
+        organization = root.add_element "md:Organization"
+        org_name = organization.add_element "md:OrganizationName", {
+            "xml:lang" => "it"
+        }
+        org_name.text = settings.organization['org_name']
+        org_display_name = organization.add_element "md:OrganizationDisplayName", {
+            "xml:lang" => "it"
+        }
+        org_display_name.text = settings.organization['org_display_name']
+        org_url = organization.add_element "md:OrganizationURL", {
+            "xml:lang" => "it"
+        }
+        org_url.text = settings.organization['org_url']
 
         #meta_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
         meta_doc << REXML::XMLDecl.new("1.0", "UTF-8")
 
-        cert = settings.get_sp_cert
+        
         #SE SERVE ANCHE ENCRYPTION
         # # Add KeyDescriptor if messages will be signed / encrypted
         # 
@@ -142,18 +146,16 @@ module Spid
         #   xc2.text = cert_text
         # end
 
+        cert = settings.get_sp_cert
         # embed signature
         if settings.metadata_signed && settings.sp_private_key && settings.sp_cert
           private_key = settings.get_sp_key
-          
           meta_doc.sign_document(private_key, cert)
         end
 
-
-
         ret = ""
         # pretty print the XML so IdP administrators can easily see what the SP supports
-        meta_doc.write(ret)
+        meta_doc.write(ret, 1)
 
         #Logging.debug "Generated metadata:\n#{ret}"
 

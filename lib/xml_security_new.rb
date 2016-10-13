@@ -158,16 +158,20 @@ module XMLSecurityNew
       x509_cert_element.text = Base64.encode64(certificate.to_der).gsub(/\n/, "")
 
       # add the signature
-      issuer_element = self.elements["//saml:Issuer"]
-      if issuer_element
-        self.root.insert_after issuer_element, signature_element
-      else
-        if sp_sso_descriptor = self.elements["/md:EntityDescriptor"]
-          self.root.insert_before sp_sso_descriptor, signature_element
-        else
-          self.root.add_element(signature_element)
-        end
-      end
+      # issuer_element = self.elements["//saml:Issuer"]
+      # if issuer_element
+      #   self.root.insert_after issuer_element, signature_element
+      # else
+      #   if sp_sso_descriptor = self.elements["/md:EntityDescriptor"]
+      #     self.root.insert_before sp_sso_descriptor, signature_element
+      #   else
+      #     self.root.add_element(signature_element)
+      #   end
+      # end
+      #imposto fissa la posizione in testa
+      sp_sso_descriptor = self.root.elements["md:SPSSODescriptor"]
+      self.root.insert_before sp_sso_descriptor, signature_element
+
     end
 
     protected
