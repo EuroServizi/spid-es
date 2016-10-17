@@ -48,21 +48,48 @@ module Spid
             "AuthnRequestsSigned"         => "1"
 
         }
-        if settings.sp_cert != nil
-          keyDescriptor = sp_sso.add_element "md:KeyDescriptor", {
-            "use" => "signing"
-          }
-          keyInfo = keyDescriptor.add_element "ds:KeyInfo", {
-            "xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"
-          }
-          x509Data = keyInfo.add_element "ds:X509Data"
-          x509Certificate = x509Data.add_element "ds:X509Certificate"
-          file = ""
-          File.foreach(settings.sp_cert){ |line|
-                                       file  += line unless (line.include?("RSA PUBLIC KEY") || line.include?("CERTIFICATE")) 
-                                     }
-          x509Certificate.text = file                            
+
+
+        # if settings.sp_cert != nil
+        #   keyDescriptor = sp_sso.add_element "md:KeyDescriptor", {
+        #     "use" => "signing"
+        #   }
+        #   keyInfo = keyDescriptor.add_element "ds:KeyInfo", {
+        #     "xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"
+        #   }
+        #   x509Data = keyInfo.add_element "ds:X509Data"
+        #   x509Certificate = x509Data.add_element "ds:X509Certificate"
+        #   file = ""
+        #   File.foreach(settings.sp_cert){ |line|
+        #                                file  += line unless (line.include?("RSA PUBLIC KEY") || line.include?("CERTIFICATE")) 
+        #                              }
+        #   x509Certificate.text = file                            
+        # end
+
+        # Add KeyDescriptor if messages will be signed / encrypted
+        cert = settings.get_sp_cert
+        if cert
+          
+          if cert.is_a?(String)
+            cert = OpenSSL::X509::Certificate.new(cert)
+          end
+          
+          cert_text = Base64.encode64(cert.to_der).to_s.gsub(/\n/, "").gsub(/\t/, "")
+          kd = sp_sso.add_element "md:KeyDescriptor", { "use" => "signing" }
+          ki = kd.add_element "ds:KeyInfo", {"xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"}
+          xd = ki.add_element "ds:X509Data"
+          xc = xd.add_element "ds:X509Certificate"
+          xc.text = cert_text
+
+          # kd2 = sp_sso.add_element "md:KeyDescriptor", { "use" => "encryption" }
+          # ki2 = kd2.add_element "ds:KeyInfo", {"xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"}
+          # xd2 = ki2.add_element "ds:X509Data"
+          # xc2 = xd2.add_element "ds:X509Certificate"
+          # xc2.text = cert_text
         end
+
+
+
         if settings.single_logout_service_url != nil
           sp_sso.add_element "md:SingleLogoutService", {
               "Binding" => "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
@@ -152,11 +179,9 @@ module Spid
           private_key = settings.get_sp_key
           meta_doc.sign_document(private_key, cert)
         end
-
         ret = ""
-        # pretty print the XML so IdP administrators can easily see what the SP supports
-        meta_doc.write(ret, 1)
-
+        # stampo come stringa semplice i metadata per non avere problemi con validazione firma
+        ret = meta_doc.to_s
         #Logging.debug "Generated metadata:\n#{ret}"
 
         return ret

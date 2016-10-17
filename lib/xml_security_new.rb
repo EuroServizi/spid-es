@@ -57,6 +57,7 @@ module XMLSecurityNew
         else
           Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
       end
+      Nokogiri::XML::XML_C14N_EXCLUSIVE_1_0
     end
 
     def algorithm(element)
@@ -135,6 +136,7 @@ module XMLSecurityNew
       digest_method_element = reference_element.add_element("ds:DigestMethod", {"Algorithm" => digest_method})
       inclusive_namespaces = INC_PREFIX_LIST.split(" ")
       canon_doc = noko.canonicalize(canon_algorithm(C14N), inclusive_namespaces)
+      #canon_doc = noko.canonicalize(canon_algorithm(C14N))
       reference_element.add_element("ds:DigestValue").text = compute_digest(canon_doc, algorithm(digest_method_element))
 
       # add SignatureValue
@@ -143,10 +145,10 @@ module XMLSecurityNew
       end
 
       noko_signed_info_element = noko_sig_element.at_xpath('//ds:Signature/ds:SignedInfo', 'ds' => DSIG)
-      canon_string = noko_signed_info_element.canonicalize(canon_algorithm(C14N))
+      canon_string = noko_signed_info_element.canonicalize(canon_algorithm(C14N), inclusive_namespaces)
 
       signature = compute_signature(private_key, algorithm(signature_method).new, canon_string)
-      signature_element.add_element("ds:SignatureValue").text = signature
+      signature_element.add_element("ds:SignatureValue").text = signature.to_s.gsub(/\n/, "").gsub(/\t/, "")
 
       # add KeyInfo
       key_info_element       = signature_element.add_element("ds:KeyInfo")
@@ -155,7 +157,7 @@ module XMLSecurityNew
       if certificate.is_a?(String)
         certificate = OpenSSL::X509::Certificate.new(certificate)
       end
-      x509_cert_element.text = Base64.encode64(certificate.to_der).gsub(/\n/, "")
+      x509_cert_element.text = Base64.encode64(certificate.to_der).to_s.gsub(/\n/, "").gsub(/\t/, "")
 
       # add the signature
       # issuer_element = self.elements["//saml:Issuer"]
@@ -177,7 +179,7 @@ module XMLSecurityNew
     protected
 
     def compute_signature(private_key, signature_algorithm, document)
-      Base64.encode64(private_key.sign(signature_algorithm, document)).gsub(/\n/, "")
+      Base64.encode64(private_key.sign(signature_algorithm, document)).to_s.gsub(/\n/, "").gsub(/\t/, "")
     end
 
     def compute_digest(document, digest_algorithm)

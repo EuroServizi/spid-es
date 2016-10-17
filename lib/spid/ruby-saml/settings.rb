@@ -45,12 +45,19 @@ module Spid
         OpenSSL::X509::Certificate.new(File.read(idp_cert))
       end
 
+      # def get_sp_cert
+      #   return nil if certificate.nil? || certificate.empty?
+
+      #   formatted_cert = OneLogin::RubySaml::Utils.format_cert(certificate)
+      #   OpenSSL::X509::Certificate.new(formatted_cert)
+      # end
+
       # @return [OpenSSL::X509::Certificate|nil] Build the SP certificate from the settings (previously format it)
       #
       def get_sp_cert
         return nil if sp_cert.nil? || sp_cert.empty?
         #decoded_content = Base64.decode64(File.read(sp_cert))
-        #formatted_cert = Spid::Saml::Utils.format_cert(decoded_content)
+        formatted_cert = Spid::Saml::Utils.format_cert(sp_cert)
         OpenSSL::X509::Certificate.new(File.read(sp_cert))
       end
 
