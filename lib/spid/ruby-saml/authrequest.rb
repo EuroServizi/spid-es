@@ -42,10 +42,11 @@ module Spid::Saml
       #usato AssertionConsumerServiceURL e ProtocolBinding in alternativa, pag 8 regole tecniche
       root.attributes['AssertionConsumerServiceIndex'] = "0"
 
-      # Conditionally defined elements based on settings
-      if @settings.assertion_consumer_service_url != nil
-        root.attributes["AssertionConsumerServiceURL"] = @settings.assertion_consumer_service_url
-      end
+      #Tolto, utilizzo AssertionConsumerServiceIndex
+      # # Conditionally defined elements based on settings
+      # if @settings.assertion_consumer_service_url != nil
+      #   root.attributes["AssertionConsumerServiceURL"] = @settings.assertion_consumer_service_url
+      # end
 
        if @settings.destination_service_url != nil
         root.attributes["Destination"] = @settings.destination_service_url
