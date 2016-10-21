@@ -71,7 +71,7 @@ module Spid::Saml
       if @settings.name_identifier_format != nil
         root.add_element "saml2p:NameIDPolicy", { 
             # Might want to make AllowCreate a setting?
-            "AllowCreate"     => "true",
+            #{}"AllowCreate"     => "true",
             "Format"          => @settings.name_identifier_format[0]
         }
       end
