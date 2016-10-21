@@ -166,8 +166,8 @@ module XMLSecurityNew
         self.root.insert_before sp_sso_descriptor, signature_element
       else
         #inserisco firma nella request
-        saml2_issuer = self.root.elements["saml2:Issuer"]
-        self.root.insert_before saml2_issuer, signature_element
+        saml_issuer = self.root.elements["saml:Issuer"]
+        self.root.insert_after saml_issuer, signature_element
       end
       
 

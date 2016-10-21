@@ -36,7 +36,7 @@ module Spid::Saml
       root.attributes['IssueInstant'] = time
       root.attributes['Version'] = "2.0"
       root.attributes['ProtocolBinding'] = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-      root.attributes['AttributeConsumingServiceIndex'] = "1"
+      root.attributes['AttributeConsumingServiceIndex'] = "0"
       root.attributes['ForceAuthn'] = "false"
       #root.attributes['IsPassive'] = "false"
       #usato AssertionConsumerServiceURL e ProtocolBinding in alternativa, pag 8 regole tecniche
@@ -81,7 +81,7 @@ module Spid::Saml
       # the IdP will choose default rules for authentication.  (Shibboleth IdP)
       if @settings.authn_context != nil
         requested_context = root.add_element "saml2p:RequestedAuthnContext", { 
-          "Comparison" => "exact"
+          "Comparison" => "minimum"
         }
         context_class = []
         @settings.authn_context.each_with_index{ |context, index|
@@ -103,8 +103,8 @@ module Spid::Saml
         
       end
 
-      request_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
-      ret = ""
+      request_doc << REXML::XMLDecl.new("1.0", "UTF-8")
+      
       cert = @settings.get_sp_cert
         # embed signature
         if @settings.metadata_signed && @settings.sp_private_key && @settings.sp_cert
@@ -115,10 +115,7 @@ module Spid::Saml
       # stampo come stringa semplice i metadata per non avere problemi con validazione firma
       #ret = request_doc.to_s
 
-      # pretty print the XML so IdP administrators can easily see what the SP supports
-      
-      @request = ""
-      request_doc.write(@request)
+      @request = request_doc.to_s
 
       #Logging.debug "Created AuthnRequest: #{@request}"
 
