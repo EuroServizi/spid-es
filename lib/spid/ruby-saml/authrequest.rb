@@ -27,9 +27,11 @@ module Spid::Saml
       time = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
       self.issue_instant = time
       # Create AuthnRequest root element using REXML 
-      request_doc = REXML::Document.new
+      request_doc = ::XMLSecurityNew::Document.new
       request_doc.context[:attribute_quote] = :quote
-      root = request_doc.add_element "saml2p:AuthnRequest", { "xmlns:saml2p" => "urn:oasis:names:tc:SAML:2.0:protocol" }
+      root = request_doc.add_element "saml2p:AuthnRequest", { "xmlns:saml2p" => "urn:oasis:names:tc:SAML:2.0:protocol", 
+                                                              "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion"
+                                                             }
       root.attributes['ID'] = uuid
       root.attributes['IssueInstant'] = time
       root.attributes['Version'] = "2.0"
@@ -50,7 +52,7 @@ module Spid::Saml
       end
 
       if @settings.issuer != nil
-        issuer = root.add_element "saml2:Issuer", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        issuer = root.add_element "saml2:Issuer"
         issuer.attributes['NameQualifier'] =  @settings.issuer
         issuer.attributes['Format'] =  "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
         issuer.text = @settings.issuer
@@ -58,8 +60,8 @@ module Spid::Saml
 
       #opzionale
       if @settings.sp_name_qualifier != nil
-        subject = root.add_element "saml2:Subject", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
-        name_id = subject.add_element "saml2:NameID", { "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        subject = root.add_element "saml2:Subject"
+        name_id = subject.add_element "saml2:NameID"
         name_id.attributes['Format'] = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         name_id.attributes['NameQualifier'] = @settings.sp_name_qualifier
       end
@@ -69,9 +71,8 @@ module Spid::Saml
       if @settings.name_identifier_format != nil
         root.add_element "saml2p:NameIDPolicy", { 
             # Might want to make AllowCreate a setting?
-            #{}"AllowCreate"     => "true",
-            "Format"          => @settings.name_identifier_format[1],
-            "SPNameQualifier" => @settings.sp_name_qualifier
+            "AllowCreate"     => "true",
+            "Format"          => @settings.name_identifier_format[0]
         }
       end
 
@@ -106,9 +107,18 @@ module Spid::Saml
 
       request_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
       ret = ""
-      # pretty print the XML so IdP administrators can easily see what the SP supports
-      request_doc.write(ret, 1)
+      cert = @settings.get_sp_cert
+        # embed signature
+        if @settings.metadata_signed && @settings.sp_private_key && @settings.sp_cert
+          private_key = @settings.get_sp_key
+          request_doc.sign_document(private_key, cert)
+        end
 
+      # stampo come stringa semplice i metadata per non avere problemi con validazione firma
+      #ret = request_doc.to_s
+
+      # pretty print the XML so IdP administrators can easily see what the SP supports
+      
       @request = ""
       request_doc.write(@request)
 
