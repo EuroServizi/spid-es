@@ -40,7 +40,7 @@ module Spid::Saml
       root.attributes['ForceAuthn'] = "false"
       #root.attributes['IsPassive'] = "false"
       #usato AssertionConsumerServiceURL e ProtocolBinding in alternativa, pag 8 regole tecniche
-      #root.attributes['AssertionConsumerServiceIndex'] = 1
+      root.attributes['AssertionConsumerServiceIndex'] = "0"
 
       # Conditionally defined elements based on settings
       if @settings.assertion_consumer_service_url != nil
@@ -105,12 +105,13 @@ module Spid::Saml
 
       request_doc << REXML::XMLDecl.new("1.0", "UTF-8")
       
-      cert = @settings.get_sp_cert
-        # embed signature
-        if @settings.metadata_signed && @settings.sp_private_key && @settings.sp_cert
-          private_key = @settings.get_sp_key
-          request_doc.sign_document(private_key, cert)
-        end
+      #LA FIRMA VA MESSA SOLO NEL CASO CON HTTP POST
+      # cert = @settings.get_sp_cert
+      #   # embed signature
+      #   if @settings.metadata_signed && @settings.sp_private_key && @settings.sp_cert
+      #     private_key = @settings.get_sp_key
+      #     request_doc.sign_document(private_key, cert)
+      #   end
 
       # stampo come stringa semplice i metadata per non avere problemi con validazione firma
       #ret = request_doc.to_s
