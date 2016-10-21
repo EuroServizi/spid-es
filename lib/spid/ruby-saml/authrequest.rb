@@ -30,7 +30,7 @@ module Spid::Saml
       request_doc = ::XMLSecurityNew::Document.new
       request_doc.context[:attribute_quote] = :quote
       root = request_doc.add_element "saml2p:AuthnRequest", { "xmlns:saml2p" => "urn:oasis:names:tc:SAML:2.0:protocol", 
-                                                              "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion"
+                                                              "xmlns:saml" => "urn:oasis:names:tc:SAML:2.0:assertion"
                                                              }
       root.attributes['ID'] = uuid
       root.attributes['IssueInstant'] = time
@@ -52,7 +52,7 @@ module Spid::Saml
       end
 
       if @settings.issuer != nil
-        issuer = root.add_element "saml2:Issuer"
+        issuer = root.add_element "saml:Issuer"
         issuer.attributes['NameQualifier'] =  @settings.issuer
         issuer.attributes['Format'] =  "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
         issuer.text = @settings.issuer
@@ -60,8 +60,8 @@ module Spid::Saml
 
       #opzionale
       if @settings.sp_name_qualifier != nil
-        subject = root.add_element "saml2:Subject"
-        name_id = subject.add_element "saml2:NameID"
+        subject = root.add_element "saml:Subject"
+        name_id = subject.add_element "saml:NameID"
         name_id.attributes['Format'] = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         name_id.attributes['NameQualifier'] = @settings.sp_name_qualifier
       end
@@ -85,9 +85,7 @@ module Spid::Saml
         }
         context_class = []
         @settings.authn_context.each_with_index{ |context, index|
-          context_class[index] = requested_context.add_element "saml2:AuthnContextClassRef", {
-            "xmlns:saml2" => "urn:oasis:names:tc:SAML:2.0:assertion"
-          }
+          context_class[index] = requested_context.add_element "saml:AuthnContextClassRef"
           context_class[index].text = context
         }
         
