@@ -227,31 +227,32 @@ module Spid
       def binding_select(service)
         # first check if we're still using the old hard coded method for 
         # backwards compatability
-        if service == "SingleSignOnService" && @settings.idp_metadata == nil && @settings.idp_sso_target_url != nil
+        if service == "SingleSignOnService" && @settings.idp_sso_target_url != nil
             return @settings.idp_sso_target_url
         end
-        if service == "SingleLogoutService" && @settings.idp_metadata == nil && @settings.idp_slo_target_url != nil
+        if service == "SingleLogoutService" && @settings.idp_slo_target_url != nil
             return  @settings.idp_slo_target_url
         end
         
         meta_doc = get_idp_metadata
         
         return nil unless meta_doc
-        # first try POST
-        sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_POST}']")
-        if !sso_element.nil? 
-          @URL = sso_element.attributes["Location"]
-          #Logging.debug "binding_select: POST to #{@URL}"
-          return @URL
-        end
-        
-        # next try GET
+        # first try GET (REDIRECT)
         sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_GET}']")
         if !sso_element.nil? 
           @URL = sso_element.attributes["Location"]
           Logging.debug "binding_select: GET from #{@URL}"
           return @URL
         end
+                
+        # next try post
+        sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_POST}']")
+        if !sso_element.nil? 
+          @URL = sso_element.attributes["Location"]
+          #Logging.debug "binding_select: POST to #{@URL}"
+          return @URL
+        end
+
         # other types we might want to add in the future:  SOAP, Artifact
       end
 
