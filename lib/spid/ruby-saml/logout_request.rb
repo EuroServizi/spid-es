@@ -22,12 +22,12 @@ module Spid::Saml
       # The IdP sent us a LogoutRequest (IdP initiated SLO)
       else
         begin
-          @request = XMLSecurity::SignedDocument.new( decode( opt[:request] ))
+          @request = Spid::XMLSecurity::SignedDocument.new( decode( opt[:request] ))
           raise if @request.nil?
           raise if @request.root.nil?
           raise if @request.root.namespace != PROTOCOL
         rescue
-          @request = XMLSecurity::SignedDocument.new( inflate( decode( opt[:request] ) ) )
+          @request = Spid::XMLSecurity::SignedDocument.new( inflate( decode( opt[:request] ) ) )
         end
         Logging.debug "LogoutRequest is: \n#{@request}"
       end 

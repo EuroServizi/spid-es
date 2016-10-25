@@ -1,4 +1,4 @@
-require "xml_security_new"
+require_relative "../xml_security_new"
 
 module Spid
   module Saml
@@ -30,7 +30,7 @@ module Spid
         idp_cert_fingerprint || begin
           idp_cert = get_idp_cert
           if idp_cert
-            fingerprint_alg = XMLSecurity::BaseDocument.new.algorithm(idp_cert_fingerprint_algorithm).new
+            fingerprint_alg = Spid::XMLSecurity::BaseDocument.new.algorithm(idp_cert_fingerprint_algorithm).new
             fingerprint_alg.hexdigest(idp_cert.to_der).upcase.scan(/../).join(":")
           end
         end

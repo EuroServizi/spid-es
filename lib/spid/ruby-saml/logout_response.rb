@@ -16,7 +16,7 @@ module Spid
 			# We've recieved a LogoutResponse from the IdP 
 			if opt[:response]
 				begin
-					@response = XMLSecurity::SignedDocument.new(decode( opt[:response] ))
+					@response = Spid::XMLSecurity::SignedDocument.new(decode( opt[:response] ))
 					# Check to see if we have a root tag using the "protocol" namespace.
 					# If not, it means this is deflated text and we need to raise to 
 					# the rescue below
@@ -25,7 +25,7 @@ module Spid
 						raise if @response.root.namespace != PROTOCOL
 					document
 				rescue
-					@response = XMLSecurity::SignedDocument.new( inflate(decode( opt[:response] ) ) )
+					@response = Spid::XMLSecurity::SignedDocument.new( inflate(decode( opt[:response] ) ) )
 				end
 			end
 			# We plan to create() a new LogoutResponse

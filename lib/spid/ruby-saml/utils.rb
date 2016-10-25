@@ -77,7 +77,7 @@ module Spid
       #
       def self.verify_signature(params)
         cert, sig_alg, signature, query_string = [:cert, :sig_alg, :signature, :query_string].map { |k| params[k]}
-        signature_algorithm = XMLSecurityNew::BaseDocument.new.algorithm(sig_alg)
+        signature_algorithm = Spid::XMLSecurityNew::BaseDocument.new.algorithm(sig_alg)
         return cert.public_key.verify(signature_algorithm.new, Base64.decode64(signature), query_string)
       end
 

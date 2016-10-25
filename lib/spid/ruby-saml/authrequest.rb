@@ -27,7 +27,7 @@ module Spid::Saml
       time = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
       self.issue_instant = time
       # Create AuthnRequest root element using REXML 
-      request_doc = ::XMLSecurityNew::Document.new
+      request_doc = Spid::XMLSecurityNew::Document.new
       request_doc.context[:attribute_quote] = :quote
       root = request_doc.add_element "saml2p:AuthnRequest", { "xmlns:saml2p" => "urn:oasis:names:tc:SAML:2.0:protocol", 
                                                               "xmlns:saml" => "urn:oasis:names:tc:SAML:2.0:assertion"

@@ -1,4 +1,4 @@
-require "xml_security"
+require "spid/xml_security"
 require 'spid/ruby-saml/utils'
 require 'spid/ruby-saml/logging'
 require 'spid/ruby-saml/coding'

@@ -4,7 +4,7 @@ require "net/https"
 require "uri"
 require "digest/md5"
 require "nokogiri"
-require "xml_security_new" #fa il require della nokogiri
+require_relative "../xml_security_new" #fa il require della nokogiri
 require "uuid"
 
 # Class to return SP metadata based on the settings requested.
@@ -30,7 +30,7 @@ module Spid
 
       def generate(settings)
         #meta_doc = REXML::Document.new
-        meta_doc = ::XMLSecurityNew::Document.new
+        meta_doc = Spid::XMLSecurityNew::Document.new
         root = meta_doc.add_element "md:EntityDescriptor", { 
             "xmlns:md"        => "urn:oasis:names:tc:SAML:2.0:metadata",
             "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace"

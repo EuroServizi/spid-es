@@ -1,4 +1,4 @@
-require "xml_security"
+require_relative "../xml_security_new"
 require "time"
 require "nokogiri"
 require "base64"
@@ -21,10 +21,10 @@ module Spid
         self.options  = options
         self.response = response
         begin
-          self.document = XMLSecurity::SignedDocument.new(Base64.decode64(response))
+          self.document = Spid::XMLSecurityNew::SignedDocument.new(Base64.decode64(response))
         rescue REXML::ParseException => e
           if response =~ /</
-            self.document = XMLSecurity::SignedDocument.new(response)
+            self.document = Spid::XMLSecurityNew::SignedDocument.new(response)
           else
             raise e
           end
@@ -113,7 +113,7 @@ module Spid
         # prime the IdP metadata before the document validation. 
         # The idp_cert needs to be populated before the validate_response_state method
         
-        if settings 
+        if settings
           Spid::Saml::Metadata.new(settings).get_idp_metadata
         end
           return false if validate_structure(soft) == false
@@ -125,7 +125,7 @@ module Spid
         return true if settings.skip_validation == true
         
         # document.validte populates the idp_cert
-          return false if document.validate(get_fingerprint, soft) == false
+        return false if document.validate_document(get_fingerprint, soft) == false
         
         # validate response code
         return false if success? == false  
@@ -163,10 +163,12 @@ module Spid
       end
 
       def get_fingerprint
+        idp_metadata = Spid::Saml::Metadata.new(settings).get_idp_metadata
+        
         if settings.idp_cert
           cert_text = Base64.decode64(settings.idp_cert)
           cert = OpenSSL::X509::Certificate.new(cert_text)
-          Digest::SHA1.hexdigest(cert.to_der).upcase.scan(/../).join(":")
+          Digest::SHA2.hexdigest(cert.to_der).upcase.scan(/../).join(":")
         else
           settings.idp_cert_fingerprint
         end
