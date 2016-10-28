@@ -95,6 +95,10 @@ module Spid
         end
       end
 
+      
+
+      #metodi per ricavare info per tracciatura agid
+
       def issuer
         @issuer ||= begin
           node = REXML::XPath.first(document, "/p:Response/a:Issuer", { "p" => PROTOCOL, "a" => ASSERTION })
@@ -102,6 +106,40 @@ module Spid
           node.nil? ? nil : node.text
         end
       end
+
+      def response_to_id
+        node = REXML::XPath.first(document, "/p:Response", { "p" => PROTOCOL })
+        return  node.attributes["InResponseTo"]
+      end
+
+      def id
+        node = REXML::XPath.first(document, "/p:Response", { "p" => PROTOCOL })
+        return  node.attributes["ID"]
+      end
+
+      def issue_instant
+        node = REXML::XPath.first(document, "/p:Response", { "p" => PROTOCOL })
+        return  node.attributes["IssueInstant"]
+      end
+
+      def assertion_id
+        node = REXML::XPath.first(document, "/p:Response/a:Assertion/", { "p" => PROTOCOL, "a" => ASSERTION  })
+        return  node.attributes["ID"]
+      end
+
+      def assertion_subject
+        node = REXML::XPath.first(document, "/p:Response/a:Assertion/a:Subject/a:NameID", { "p" => PROTOCOL, "a" => ASSERTION  })
+        return  node.text
+      end
+
+      def assertion_subject_name_qualifier
+        node = REXML::XPath.first(document, "/p:Response/a:Assertion/a:Subject/a:NameID", { "p" => PROTOCOL, "a" => ASSERTION  })
+        return  node.attributes["NameQualifier"]
+      end
+
+     
+
+
 
       private
 
