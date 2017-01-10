@@ -1,94 +1,109 @@
 # SPID Euro Servizi
 
-The Ruby SAML Spid library is a fork of Ruby SAML and it is used for implementing the client side of a SAML authorization, initialization and confirmation requests
-with SPID.
+La libreria è un fork della libreria Ruby SAML e serve per l'integrazione di un client (Service Provider) con l'autenticazione SPID (Sistema Pubblico di Identità Digitale)
+Utilizza lo standard SAML 2 come previsto dalla normativa (Regole tecniche v1. http://www.agid.gov.it/sites/default/files/circolari/spid-regole_tecniche_v1.pdf)
 
 
-## The initialization phase
+## Fase iniziale
 
-This is the first request you will get from the identity provider. It will hit your application at a specific URL (that you've announced as being your SAML initialization point). The response to this initialization, is a redirect back to the identity provider, which can look something like this:
+Azione di partenza in cui viene creata la request da inviare all'idp e viene fatto un redirect all'identity provider.
 
 ```ruby
     def init
-        #your login with Spid method..
+        #creo un istanza di Spid::Saml::Authrequest
+        saml_settings = get_saml_settings
         #create an instance of Spid::Saml::Authrequest
-        request = Spid::Saml::Authrequest.new(get_saml_settings)
+        request = Spid::Saml::Authrequest.new(saml_settings)
         auth_request = request.create
         # Based on the IdP metadata, select the appropriate binding 
         # and return the action to perform to the controller
-        meta = Spid::Saml::Metadata.new(get_saml_settings)
+        meta = Spid::Saml::Metadata.new(saml_settings)
         signature = get_signature(auth_request.uuid,auth_request.request,"http://www.w3.org/2001/04/xmldsig-more#rsa-sha256")
-        redirect meta.create_sso_request( auth_request.request, {   :RelayState   => request.uuid,
-                                                                  :SigAlg       => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
-                                                                  :Signature    => signature
-                                                              } )
+        sso_request = meta.create_sso_request( auth_request.request, {  :RelayState   => request.uuid,
+                                                                        :SigAlg       => "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+                                                                        :Signature    => signature } )
+        redirect_to sso_request
     end
 
-    
+```
+## Generazione della firma
+
+```ruby
     def get_signature(relayState, request, sigAlg)
-        #url encode of relayState
+        #url encode relayState
         relayState_encoded = escape(relayState)
-        
-        #deflate and base64 of samlrequest
+        #deflate e base64 della samlrequest
         deflate_request_B64 = encode(deflate(request))
-        
-        #url encode of samlrequest
+        #url encode della samlrequest
         deflate_request_B64_encoded = escape(deflate_request_B64)
-        
-        #url encode of sigAlg
+        #url encode della sigAlg
         sigAlg_encoded = escape(sigAlg)
-        
         querystring="SAMLRequest=#{deflate_request_B64_encoded}&RelayState=#{relayState_encoded}&SigAlg=#{sigAlg_encoded}"
-        digest = OpenSSL::Digest::SHA1.new(querystring.strip)  
-        pk = OpenSSL::PKey::RSA.new File.read(File.join("path.of.cert.pem"))
+        #puts "**QUERYSTRING** = "+querystring
+        digest = OpenSSL::Digest::SHA256.new(querystring.strip) #sha2 a 256
+        chiave_privata = xxxxxx  #path della chiave privata con cui firmare 
+        pk = OpenSSL::PKey::RSA.new File.read(chiave_privata) #chiave privata
         qssigned = pk.sign(digest,querystring.strip)
         Base64.encode64(qssigned).gsub(/\n/, "")
-    end 
+    end
 ```
 
 
-Once you've redirected back to the identity provider, it will ensure that the user has been authorized and redirect back to your application for final consumption, this is can look something like this (the authorize_success and authorize_failure methods are specific to your application):
+Questo metodo è l'endpoint impostato a livello di metadata del service provider come 'assertion consumer', riceve la response saml con i dati di registrazione fatta su SPID dagli utenti. 
 
 ```ruby
-    def consume
-        #your assertion_consumer method...
+    def assertion_consumer
+        #id dell' idp che manda response (es: 'infocert','poste')
+        provider_id = @request.params['ProviderID']
+        #response saml inviata dall'idp
         saml_response = @request.params['SAMLResponse'] 
         if !saml_response.nil? 
-          #read the settings
-          settings = get_saml_settings
-          #create an instance of response
-          response = Spid::Saml::Response.new(saml_response)
-          response.settings = settings
+            #assegno i settaggi
+            settings = get_saml_settings
+            #creo un oggetto response
+            response = Spid::Saml::Response.new(saml_response)
+            #assegno alla response i settaggi
+            response.settings = settings
+            #estraggo dal Base64 l'xml
+            saml_response_dec = Base64.decode64(saml_response)
+            #puts "**SAML RESPONSE DECODIFICATA: #{saml_response_dec}"
 
-          #validation of response
-          if response.is_valid? 
-            authorize_success(response.attributes)
-          else
-            authorize_failure(response.attributes)
-          end
+            #validation of response
+            if response.is_valid? 
+                attributi_utente = response.attributes
+                ...
+            else
+                #autenticazione fallita!
+            end
       end
     end  
 ```
 
-In the above there are a few assumptions in place, one being that the response.name_id is an email address. This is all handled with how you specify the settings that are in play via the saml_settings method. That could be implemented along the lines of this:
+Questo metodo va a impostare le varie configurazioni che servono per connettersi ad un idp. ( NB: nel caso di SPID ci sono vari idp (Poste, TIM, Info Cert) ) 
 
 ```ruby
     def get_saml_settings  
         settings = Spid::Saml::Settings.new
-        settings.assertion_consumer_service_url     = ...String, url of your assertion consumer.
-        settings.issuer                             = ...String, host of your service provider or metadata url.
-        settings.sp_cert                            = ...String, path of your cert.pem.
-        settings.single_logout_service_url          = ...String, url of idp logout service'.
-        settings.sp_name_qualifier                  = ...String, name qualifier of service processor  (like your metadata url).
-        settings.idp_name_qualifier                 = ...String, name qualifier of identity provider (idp metadata).
-        settings.name_identifier_format             = ...Array, format names ( ["urn:oasis:names:tc:SAML:2.0:nameid-format:persistent", "urn:oasis:names:tc:SAML:2.0:nameid-format:transient", "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"] ).
-        settings.destination_service_url            = ...String, url of proxy for single sign on (in Idp).
-        settings.single_logout_destination          = ...String, url of logout request. 
-        settings.authn_context                      = ...Array, types of permissions allowed (["urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"]).
-        settings.requester_identificator            = ...unique id of your service provider domain.
-        settings.skip_validation                    = ...Bool, skip validation of assertion or response (false).
-        settings.idp_sso_target_url                 = ...String, url of idp sso proxy ("https://federatest.lepida.it/gw/SSOProxy/SAML2").
-        settings.idp_metadata                       = ...String, url of idp metadata ("https://federatest.lepida.it/gw/metadata").
+        settings.assertion_consumer_service_url    #= ...String, url dell' assertion consumer al quale arriva la response dell' idp.
+        settings.issuer                            #= ...String, host del service provider o url dei metadata.
+        settings.sp_cert                           #= ...String, path del certificato pubblico in formato pem.
+        settings.sp_private_key                    #= ...String, path della chiave privata in formato pem.
+        settings.single_logout_service_url         #= ...String, url del servizio di logout dell'idp.
+        settings.sp_name_qualifier                 #= ...String, nome qualificato del service provider o url dei metadata.
+        settings.idp_name_qualifier                #= ...String, nome qualificato dell' identity provider o url dei metadata dell' idp.
+        settings.name_identifier_format            #= ...Array, formato di nomi ( impostare: ["urn:oasis:names:tc:SAML:2.0:nameid-format:transient"] ).
+        settings.destination_service_url           #= ...String, url del servizio per l'identity provider, usato come proxy per il sso.
+        settings.single_logout_destination         #= ...String, url di destinazione per la request logout. 
+        settings.authn_context                     #= ...Array, tipi di autorizzazioni permesse (impostare: ["urn:oasis:names:tc:SAML:2.0:ac:classes:Smartcard", 
+                                                                "urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport"]).
+        settings.requester_identificator           #= ...Array con id dei richiedenti (non usato).
+        settings.skip_validation                   #= ...Bool, imposta se evitare la validazione della response o delle asserzioni (false).
+        settings.idp_sso_target_url                #= ...String, url target del sso dell' identity provider.
+        settings.idp_metadata                      #= ...String, url dei metadata dell' idp.
+        settings.requested_attribute               #= ...Array, contiene i nomi dei campi richiesti dal servizio nei metadata.
+        settings.metadata_signed                   #= ...String, imposta se firmare i metadata.
+        settings.organization                      #= ...Hash, contiene nome breve (org_name), nome esteso (org_display_name) e url (org_url) 
+                                                               dell' organizzazione fornitore di servizi.
         settings
     end  
 ```
@@ -97,28 +112,16 @@ In the above there are a few assumptions in place, one being that the response.n
 
 ## Service Provider Metadata
 
-To form a trusted pair relationship with the IdP, the SP (you) need to provide metadata XML
-to the IdP for various good reasons.  (Caching, certificate lookups, relying party permissions, etc)
-
-The class Onelogin::Saml::Metdata takes care of this by reading the Settings and returning XML.  All
-you have to do is add a controller to return the data, then give this URL to the IdP administrator.
-The metdata will be polled by the IdP every few minutes, so updating your settings should propagate
-to the IdP settings.
+Per una relazione sicura con l'idp, il Service Provider deve fornire i metadata in formato xml.
+La classe Spid::Saml::Metadata legge i settaggi e fornisce l'xml richiesto dagli idp.
 
 ```ruby
-  class SamlController < ApplicationController
-    # ... the rest of your controller definitions ...
-    def metadata
-      meta = Spid::Saml::Metadata.new
-      settings = get_saml_settings
-      render :xml => meta.generate(settings)
+    def sp_metadata
+        settings = get_saml_settings
+        meta = Spid::Saml::Metadata.new
+        
+        @response.headers['Content-Type'] = 'application/samlmetadata+xml'
+        $out << meta.generate(settings)
     end
-  end
 ```
 
-## Note on Patches/Pull Requests
-
-* Fork the project.
-* Make your feature addition or bug fix.
-* Commit, do not mess with rakefile, version, or history. (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
-* Send me a pull request.
