@@ -45,7 +45,7 @@ module Spid
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
             "WantAssertionsSigned"       => "true",
-            "AuthnRequestsSigned"         => "1"
+            "AuthnRequestsSigned"         => "true"
 
         }
 
