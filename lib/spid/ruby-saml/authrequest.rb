@@ -48,11 +48,11 @@ module Spid::Saml
       #   root.attributes["AssertionConsumerServiceURL"] = @settings.assertion_consumer_service_url
       # end
 
-       if @settings.destination_service_url != nil
+      if @settings.destination_service_url != nil
         root.attributes["Destination"] = @settings.destination_service_url
       end
 
-      if @settings.issuer != nil
+      unless @settings.issuer.blank?
         issuer = root.add_element "saml:Issuer"
         issuer.attributes['NameQualifier'] =  @settings.issuer
         issuer.attributes['Format'] =  "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
@@ -60,7 +60,7 @@ module Spid::Saml
       end
 
       #opzionale
-      if @settings.sp_name_qualifier != nil
+      unless @settings.sp_name_qualifier.blank?
         subject = root.add_element "saml:Subject"
         name_id = subject.add_element "saml:NameID"
         name_id.attributes['Format'] = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
