@@ -4,7 +4,7 @@ module Spid
   module Saml
     class Settings
      
-      attr_accessor :sp_name_qualifier, :sp_cert, :sp_private_key, :metadata_signed, :requested_attribute, :organization
+      attr_accessor :sp_name_qualifier, :sp_name_identifier, :sp_cert, :sp_private_key, :metadata_signed, :requested_attribute, :organization
       attr_accessor :idp_sso_target_url, :idp_cert_fingerprint, :idp_cert, :idp_slo_target_url, :idp_metadata, :idp_metadata_ttl, :idp_name_qualifier
       attr_accessor :assertion_consumer_service_binding, :assertion_consumer_service_url
       attr_accessor :name_identifier_value, :name_identifier_format

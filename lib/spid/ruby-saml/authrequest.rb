@@ -54,7 +54,8 @@ module Spid::Saml
 
       unless @settings.issuer.blank?
         issuer = root.add_element "saml:Issuer"
-        issuer.attributes['NameQualifier'] =  @settings.issuer
+        issuer.attributes['NameQualifier'] =  @settings.issuer #non metto @settings.sp_name_qualifier, questo valore deve essere uguale al 
+        #entityID dei metadata che usa @settings.issuer
         issuer.attributes['Format'] =  "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
         issuer.text = @settings.issuer
       end
@@ -65,6 +66,7 @@ module Spid::Saml
         name_id = subject.add_element "saml:NameID"
         name_id.attributes['Format'] = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"
         name_id.attributes['NameQualifier'] = @settings.sp_name_qualifier
+        name_id.text = @settings.sp_name_identifier
       end
 
 
