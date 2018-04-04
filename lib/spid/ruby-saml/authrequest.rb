@@ -36,11 +36,11 @@ module Spid::Saml
       root.attributes['IssueInstant'] = time
       root.attributes['Version'] = "2.0"
       #root.attributes['ProtocolBinding'] = "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
-      root.attributes['AttributeConsumingServiceIndex'] = "0"
+      root.attributes['AttributeConsumingServiceIndex'] = @settings.assertion_consumer_service_index
       root.attributes['ForceAuthn'] = "true"
       #root.attributes['IsPassive'] = "false"
       #usato AssertionConsumerServiceURL e ProtocolBinding in alternativa, pag 8 regole tecniche
-      root.attributes['AssertionConsumerServiceIndex'] = "0"
+      root.attributes['AssertionConsumerServiceIndex'] = @settings.attribute_consuming_service_index
 
       #Tolto, utilizzo AssertionConsumerServiceIndex
       # # Conditionally defined elements based on settings
