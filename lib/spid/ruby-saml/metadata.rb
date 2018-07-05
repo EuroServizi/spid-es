@@ -299,7 +299,7 @@ module Spid
         #meta_text = response.body
         #testo_response = meta_text.sub!(' xmlns:xml="http://www.w3.org/XML/1998/namespace"', '') da errori
         #uso nokogiri per cercare il certificato, uso la funzione che rimuove tutti i namespace 
-        doc_noko = Nokogiri::XML(response.body)
+        doc_noko = Nokogiri::XML(response.body.gsub(/\n/, "").gsub(/\t/, "")) #modifica per poste
         doc_noko.remove_namespaces!
         extract_certificate(doc_noko)
         doc_rexml = REXML::Document.new(doc_noko.to_xml)
