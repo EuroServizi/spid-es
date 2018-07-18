@@ -24,7 +24,7 @@ module Spid::Saml
     def create(params = {})
       uuid = "_" + UUID.new.generate
       self.uuid = uuid
-      time = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+      time = Time.now.localtime.strftime("%Y-%m-%dT%H:%M:%SZ")
       self.issue_instant = time
       # Create AuthnRequest root element using REXML 
       request_doc = Spid::XMLSecurityNew::Document.new
