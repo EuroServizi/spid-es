@@ -112,30 +112,83 @@ module Spid
         end
 
         if settings.assertion_consumer_service_url
-          sp_sso.add_element "md:AssertionConsumerService", {
-              "Binding" => settings.assertion_consumer_service_binding,
-              "Location" => settings.assertion_consumer_service_url,
-              "isDefault" => true,
-              "index" => 0
-          }
+          
+            #ciclo e creo i vari tag AssertionConsumerService
+            settings.requested_attribute.each_pair{ |index, hash_service|
+
+                sp_sso.add_element "md:AssertionConsumerService", {
+                  "Binding" => settings.assertion_consumer_service_binding,
+                  "Location" => (hash_service['external'] ? hash_service['url_consumer'] : settings.assertion_consumer_service_url ),
+                  "isDefault" => hash_service['default'],
+                  "index" => index
+                }
+            }
+
+            # #Caso con eidas
+            # sp_sso.add_element "md:AssertionConsumerService", {
+            #     "Binding" => settings.assertion_consumer_service_binding,
+            #     "Location" => settings.assertion_consumer_service_url,
+            #     "index" => 99
+            # }
+            
+            # sp_sso.add_element "md:AssertionConsumerService", {
+            #     "Binding" => settings.assertion_consumer_service_binding,
+            #     "Location" => settings.assertion_consumer_service_url,
+            #     "index" => 100
+            # }
+
+            settings.requested_attribute.each_pair{ |index, hash_service|
+
+              #AttributeConsumingService
+              attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
+                  "index" => index,
+              }
+              service_name = attr_cons_service.add_element "md:ServiceName", {
+                    "xml:lang" => "it"
+              }
+              service_name.text = hash_service['testo']
+              hash_service['array_campi'].each_with_index{ |attribute, index|
+                attr_cons_service.add_element "md:RequestedAttribute", {
+                    "Name" => attribute
+                }
+              }
+            }
+
+
+
+
+            #Per EIDAS
+            # #AttributeConsumingService
+            # attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
+            #     "index" => "99",
+            # }
+            # service_name 
+            # = attr_cons_service.add_element "md:ServiceName", {
+            #       "xml:lang" => "it"
+            # }
+            # service_name.text = "eIDAS Natural Person Minimum Attribute Set"
+            # settings.requested_attribute.each_with_index{ |attribute, index|
+            #   attr_cons_service.add_element "md:RequestedAttribute", {
+            #       "Name" => attribute
+            #   }
+            # }
+
+            # #AttributeConsumingService
+            # attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
+            #   "index" => "100",
+            # }
+            # service_name = attr_cons_service.add_element "md:ServiceName", {
+            #       "xml:lang" => "it"
+            # }
+            # service_name.text = "eIDAS Natural Person Full Attribute Set"
+            # settings.requested_attribute.each_with_index{ |attribute, index|
+            #   attr_cons_service.add_element "md:RequestedAttribute", {
+            #       "Name" => attribute
+            #   }
+            # }
+
+
         end
-
-        
-
-        #AttributeConsumingService
-        attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
-            "index" => "0",
-        }
-        service_name = attr_cons_service.add_element "md:ServiceName", {
-              "xml:lang" => "it"
-          }
-        service_name.text = "User Data"
-        settings.requested_attribute.each_with_index{ |attribute, index|
-          attr_cons_service.add_element "md:RequestedAttribute", {
-              "Name" => attribute
-          }
-        }
-        
         #organization
         organization = root.add_element "md:Organization"
         org_name = organization.add_element "md:OrganizationName", {
