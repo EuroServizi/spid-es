@@ -114,7 +114,7 @@ module Spid
         if settings.assertion_consumer_service_url
           
             #ciclo e creo i vari tag AssertionConsumerService
-            settings.requested_attribute.each_pair{ |index, hash_service|
+            settings.hash_assertion_consumer.each_pair{ |index, hash_service|
 
                 sp_sso.add_element "md:AssertionConsumerService", {
                   "Binding" => settings.assertion_consumer_service_binding,
@@ -137,7 +137,7 @@ module Spid
             #     "index" => 100
             # }
 
-            settings.requested_attribute.each_pair{ |index, hash_service|
+            settings.hash_assertion_consumer.each_pair{ |index, hash_service|
 
               #AttributeConsumingService
               attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
