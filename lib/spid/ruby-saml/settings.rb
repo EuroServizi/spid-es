@@ -4,7 +4,7 @@ module Spid
   module Saml
     class Settings
      
-      attr_accessor :sp_name_qualifier, :sp_name_identifier, :sp_cert, :sp_private_key, :metadata_signed, :requested_attribute,:requested_attribute_eidas_min, :requested_attribute_eidas_full, :organization
+      attr_accessor :sp_name_qualifier, :sp_name_identifier, :sp_cert, :sp_external_consumer_cert, :sp_private_key, :metadata_signed, :requested_attribute,:requested_attribute_eidas_min, :requested_attribute_eidas_full, :organization
       attr_accessor :idp_sso_target_url, :idp_cert_fingerprint, :idp_cert, :idp_slo_target_url, :idp_metadata, :idp_metadata_ttl, :idp_name_qualifier
       attr_accessor :assertion_consumer_service_binding, :assertion_consumer_service_url, :assertion_consumer_service_index, :attribute_consuming_service_index, :hash_assertion_consumer
       attr_accessor :name_identifier_value, :name_identifier_format
@@ -54,12 +54,22 @@ module Spid
 
       # @return [OpenSSL::X509::Certificate|nil] Build the SP certificate from the settings (previously format it)
       #
-      def get_sp_cert
-        return nil if sp_cert.nil? || sp_cert.empty?
-        #decoded_content = Base64.decode64(File.read(sp_cert))
-        formatted_cert = Spid::Saml::Utils.format_cert(sp_cert)
-        OpenSSL::X509::Certificate.new(File.read(sp_cert))
+      #Questo metodo e' stato generalizzato sotto
+      # def get_sp_cert
+      #   return nil if sp_cert.nil? || sp_cert.empty?
+      #   #decoded_content = Base64.decode64(File.read(sp_cert))
+      #   formatted_cert = Spid::Saml::Utils.format_cert(sp_cert)
+      #   OpenSSL::X509::Certificate.new(File.read(sp_cert))
+      # end
+
+      def get_cert(cert)
+        return nil if cert.nil? || cert.empty?
+        #decoded_content = Base64.decode64(File.read(cert))
+        formatted_cert = Spid::Saml::Utils.format_cert(cert)
+        OpenSSL::X509::Certificate.new(File.read(cert))
       end
+
+
 
       # @return [OpenSSL::PKey::RSA] Build the SP private from the settings (previously format it)
       #

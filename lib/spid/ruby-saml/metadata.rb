@@ -67,7 +67,8 @@ module Spid
         # end
 
         # Add KeyDescriptor if messages will be signed / encrypted
-        cert = settings.get_sp_cert
+        #cert = settings.get_sp_cert
+        cert = settings.get_cert(settings.sp_cert)
         if cert
           
           if cert.is_a?(String)
@@ -88,7 +89,24 @@ module Spid
           # xc2.text = cert_text
         end
 
-
+        if !settings.sp_external_consumer_cert.nil? && settings.sp_external_consumer_cert.length > 0
+          settings.sp_external_consumer_cert.each{ |cert_cons_external|
+            cert_ex = settings.get_cert(cert_cons_external)
+            if cert_ex
+              
+              if cert_ex.is_a?(String)
+                cert_ex = OpenSSL::X509::Certificate.new(cert_ex)
+              end
+              
+              cert_text = Base64.encode64(cert_ex.to_der).to_s.gsub(/\n/, "").gsub(/\t/, "")
+              kd = sp_sso.add_element "md:KeyDescriptor", { "use" => "signing" }
+              ki = kd.add_element "ds:KeyInfo", {"xmlns:ds" => "http://www.w3.org/2000/09/xmldsig#"}
+              xd = ki.add_element "ds:X509Data"
+              xc = xd.add_element "ds:X509Certificate"
+              xc.text = cert_text
+            end
+          }
+        end
 
         if settings.single_logout_service_url != nil
           sp_sso.add_element "md:SingleLogoutService", {
@@ -226,7 +244,8 @@ module Spid
         #   xc2.text = cert_text
         # end
 
-        cert = settings.get_sp_cert
+        #cert = settings.get_sp_cert
+        cert = settings.get_cert(settings.sp_cert) #inserisco il certificato principale
         # embed signature
         if settings.metadata_signed && settings.sp_private_key && settings.sp_cert
           private_key = settings.get_sp_key
