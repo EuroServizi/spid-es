@@ -5,7 +5,7 @@ module Spid
     class Settings
      
       attr_accessor :sp_name_qualifier, :sp_name_identifier, :sp_cert, :sp_external_consumer_cert, :sp_private_key, :metadata_signed, :requested_attribute,:requested_attribute_eidas_min, :requested_attribute_eidas_full, :organization
-      attr_accessor :idp_sso_target_url, :idp_cert_fingerprint, :idp_cert, :idp_slo_target_url, :idp_metadata, :idp_metadata_ttl, :idp_name_qualifier
+      attr_accessor :idp_entity_id, :idp_sso_target_url, :idp_cert_fingerprint, :idp_cert, :idp_slo_target_url, :idp_metadata, :idp_metadata_ttl, :idp_name_qualifier
       attr_accessor :assertion_consumer_service_binding, :assertion_consumer_service_url, :assertion_consumer_service_index, :attribute_consuming_service_index, :hash_assertion_consumer
       attr_accessor :name_identifier_value, :name_identifier_format
       attr_accessor :sessionindex, :issuer, :destination_service_url, :authn_context, :requester_identificator
