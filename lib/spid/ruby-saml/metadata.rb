@@ -119,6 +119,18 @@ module Spid
           }
         end
 
+        #Logout dei servizi esterni
+        unless settings.hash_assertion_consumer.blank?
+          settings.hash_assertion_consumer.each_pair{ |index, hash_service|
+            unless hash_service['logout'].blank?
+              sp_sso.add_element "md:SingleLogoutService", {
+                "Binding" => hash_service['logout']['binding'] || "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+                "Location" => hash_service['logout']['location']
+              }
+            end
+          }
+        end
+
         name_identifier_formats = settings.name_identifier_format
         if name_identifier_formats != nil
           name_id = []
@@ -165,11 +177,27 @@ module Spid
                     "xml:lang" => "it"
               }
               service_name.text = hash_service['testo']
-              hash_service['array_campi'].each_with_index{ |attribute, index|
-                attr_cons_service.add_element "md:RequestedAttribute", {
-                    "Name" => attribute
+              unless hash_service['description'].blank?
+                service_description = attr_cons_service.add_element "md:ServiceDescription", {
+                  "xml:lang" => "it"
                 }
-              }
+                service_description.text = hash_service['description']
+              end
+              
+              if hash_service['array_campi'].is_a?(Array)
+                hash_service['array_campi'].each_with_index{ |attribute, index|
+                  attr_cons_service.add_element "md:RequestedAttribute", {
+                      "Name" => attribute
+                  }
+                }
+              else #hash
+                hash_service['array_campi'].each_pair{ |attribute, name_format|
+                  attr_cons_service.add_element "md:RequestedAttribute", {
+                      "Name" => attribute,
+                      "NameFormat" => name_format
+                  }
+                }
+              end
             }
 
 
