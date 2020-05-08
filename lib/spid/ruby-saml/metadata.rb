@@ -31,10 +31,19 @@ module Spid
       def generate(settings)
         #meta_doc = REXML::Document.new
         meta_doc = Spid::XMLSecurityNew::Document.new
-        root = meta_doc.add_element "md:EntityDescriptor", { 
+        if settings.aggregato
+          root = meta_doc.add_element "md:EntityDescriptor", { 
+            "xmlns:md"        => "urn:oasis:names:tc:SAML:2.0:metadata",
+            "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace",
+            "xmlns:spid"        => "https://spid.gov.it/saml-extensions",
+          }
+        else
+          root = meta_doc.add_element "md:EntityDescriptor", { 
             "xmlns:md"        => "urn:oasis:names:tc:SAML:2.0:metadata",
             "xmlns:xml"       => "http://www.w3.org/XML/1998/namespace"
-        }
+          }
+        end
+        
         if settings.issuer != nil
           root.attributes["entityID"] = settings.issuer
         end
@@ -201,39 +210,6 @@ module Spid
             }
 
 
-
-
-            #Per EIDAS
-            # #AttributeConsumingService
-            # attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
-            #     "index" => "99",
-            # }
-            # service_name 
-            # = attr_cons_service.add_element "md:ServiceName", {
-            #       "xml:lang" => "it"
-            # }
-            # service_name.text = "eIDAS Natural Person Minimum Attribute Set"
-            # settings.requested_attribute.each_with_index{ |attribute, index|
-            #   attr_cons_service.add_element "md:RequestedAttribute", {
-            #       "Name" => attribute
-            #   }
-            # }
-
-            # #AttributeConsumingService
-            # attr_cons_service = sp_sso.add_element "md:AttributeConsumingService", {
-            #   "index" => "100",
-            # }
-            # service_name = attr_cons_service.add_element "md:ServiceName", {
-            #       "xml:lang" => "it"
-            # }
-            # service_name.text = "eIDAS Natural Person Full Attribute Set"
-            # settings.requested_attribute.each_with_index{ |attribute, index|
-            #   attr_cons_service.add_element "md:RequestedAttribute", {
-            #       "Name" => attribute
-            #   }
-            # }
-
-
         end
         #organization
         organization = root.add_element "md:Organization"
@@ -244,11 +220,53 @@ module Spid
         org_display_name = organization.add_element "md:OrganizationDisplayName", {
             "xml:lang" => "it"
         }
-        org_display_name.text = settings.organization['org_display_name']
+    
+        org_display_name.text = settings.organization['org_display_name']+(settings.aggregato ? " tramite #{settings.hash_aggregatore['soggetto_aggregatore']}" : '')
         org_url = organization.add_element "md:OrganizationURL", {
             "xml:lang" => "it"
         }
         org_url.text = settings.organization['org_url']
+
+        #ContactPerson per sp aggregato
+        if settings.aggregato
+          contact_person_aggregatore = root.add_element "md:ContactPerson", {
+            "contactType" => "other",
+            "spid:entityType" => "spid:aggregator"
+          }
+          company = contact_person_aggregatore.add_element "md:Company"
+          company.text = settings.hash_aggregatore['soggetto_aggregatore']
+
+          extensions_aggregatore = contact_person_aggregatore.add_element "md:Extensions"
+          vat_number_aggregatore = extensions_aggregatore.add_element "spid:VATNumber"
+          vat_number_aggregatore.text = settings.hash_aggregatore['piva_aggregatore']
+          
+          ipa_code_aggregatore = extensions_aggregatore.add_element "spid:IPACode"
+          ipa_code_aggregatore.text = settings.hash_aggregatore['cipa_aggregatore']
+
+          fiscal_code_aggregatore = extensions_aggregatore.add_element "spid:FiscalCode"
+          fiscal_code_aggregatore.text = settings.hash_aggregatore['cf_aggregatore']
+
+          contact_person_aggregato = root.add_element "md:ContactPerson", {
+            "contactType" => "other",
+            "spid:entityType" => "spid:aggregated"
+          }
+          company = contact_person_aggregato.add_element "md:Company"
+          company.text = settings.organization['org_name']
+
+          extensions_aggregato = contact_person_aggregato.add_element "md:Extensions"
+          unless settings.hash_aggregatore['soggetto_aggregato']['vat_number'].blank?
+            vat_number_aggregato = extensions_aggregato.add_element "spid:VATNumber"
+            vat_number_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['vat_number']
+          end
+          unless settings.hash_aggregatore['soggetto_aggregato']['ipa_code'].blank?
+            ipa_code_aggregato = extensions_aggregato.add_element "spid:IPACode" 
+            ipa_code_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['ipa_code']
+          end
+          unless settings.hash_aggregatore['soggetto_aggregato']['fiscal_code'].blank?
+            fiscal_code_aggregato = extensions_aggregato.add_element "spid:FiscalCode" 
+            fiscal_code_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['fiscal_code']
+          end
+        end
 
         #meta_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
         meta_doc << REXML::XMLDecl.new("1.0", "UTF-8")

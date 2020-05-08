@@ -10,7 +10,7 @@ module Spid
       attr_accessor :name_identifier_value, :name_identifier_format
       attr_accessor :sessionindex, :issuer, :destination_service_url, :authn_context, :requester_identificator
       attr_accessor :single_logout_service_url, :single_logout_service_binding, :single_logout_destination
-      attr_accessor :skip_validation
+      attr_accessor :skip_validation, :aggregato, :hash_aggregatore
     
       def initialize(config = {})
         config.each do |k,v|
