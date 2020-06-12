@@ -268,6 +268,8 @@ module Spid
             return false if validate_destination(soft) == false
             #validazione status
             return false if validate_status(soft) == false
+            #validazione inresponseto
+            return false if validate_presence_inresponseto(soft) == false
             #validazione issuer
             return false if validate_issuer(soft) == false
             #validazioni varie su asserzioni
@@ -312,6 +314,11 @@ module Spid
           end
         end
 
+        def validate_presence_inresponseto(soft=true)
+          response_to_id_value = response_to_id
+          return (soft ? false : validation_error("InResponseTo non specificato o mancante")) if response_to_id_value.blank?
+        end
+
 
 
         #validate status e status code
@@ -344,16 +351,16 @@ module Spid
         end
 
         def version_assertion(document)
-          assertion_nodes = xpath_from_signed_assertion()
-          @version_assertion = "2.0"
-          #ciclo sui nodi delle asserzioni, se uno ha una versione diversa da 2.0 ritorno nil
-          unless assertion_nodes.blank?
-            assertion_nodes.each{ |ass_node|
-              return nil if ass_node.attributes['Version'] != "2.0"
-            }
-          end
-          @version_assertion 
-      end
+            assertion_nodes = xpath_from_signed_assertion()
+            @version_assertion = "2.0"
+            #ciclo sui nodi delle asserzioni, se uno ha una versione diversa da 2.0 ritorno nil
+            unless assertion_nodes.blank?
+              assertion_nodes.each{ |ass_node|
+                return nil if ass_node.attributes['Version'] != "2.0"
+              }
+            end
+            @version_assertion 
+        end
 
         def validate_version(soft = true)
             unless version(self.document) == "2.0"
@@ -364,12 +371,12 @@ module Spid
         end
 
         def validate_version_assertion(soft = true)
-          unless version_assertion(self.document) == "2.0"
-            #return append_error("Unsupported SAML version")
-            return soft ? false : validation_error("Unsupported SAML Assertion version")
-          end
-          true
-      end
+            unless version_assertion(self.document) == "2.0"
+              #return append_error("Unsupported SAML version")
+              return soft ? false : validation_error("Unsupported SAML Assertion version")
+            end
+            true
+        end
 
         def validate_signed_elements(soft = true)
             signature_nodes = REXML::XPath.match(decrypted_document.nil? ? document : decrypted_document,"//ds:Signature",{"ds"=>DSIG})

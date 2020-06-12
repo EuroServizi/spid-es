@@ -47,9 +47,10 @@ module Spid
         if settings.issuer != nil
           root.attributes["entityID"] = settings.issuer
         end
-        uuid = "_" + UUID.new.generate
-        self.uuid = uuid
-        root.attributes["ID"] = uuid
+        #Tolto per non far cambiare sempre il metadata
+        # uuid = "_" + UUID.new.generate
+        # self.uuid = uuid
+        # root.attributes["ID"] = uuid
 
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
