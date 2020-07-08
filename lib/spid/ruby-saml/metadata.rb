@@ -50,7 +50,7 @@ module Spid
         #Tolto per non far cambiare sempre il metadata
         #uuid = "_" + UUID.new.generate
         #genero l'id come hash dell'entityID
-        uuid = "_" + settings.issuer.hash
+        uuid = "_" + settings.issuer.hash.to_s
         self.uuid = uuid
         root.attributes["ID"] = uuid
 
