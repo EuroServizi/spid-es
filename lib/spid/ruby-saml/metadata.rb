@@ -48,9 +48,11 @@ module Spid
           root.attributes["entityID"] = settings.issuer
         end
         #Tolto per non far cambiare sempre il metadata
-        # uuid = "_" + UUID.new.generate
-        # self.uuid = uuid
-        # root.attributes["ID"] = uuid
+        #uuid = "_" + UUID.new.generate
+        #genero l'id come hash dell'entityID
+        uuid = "_" + settings.issuer.hash
+        self.uuid = uuid
+        root.attributes["ID"] = uuid
 
         sp_sso = root.add_element "md:SPSSODescriptor", { 
             "protocolSupportEnumeration" => "urn:oasis:names:tc:SAML:2.0:protocol",
