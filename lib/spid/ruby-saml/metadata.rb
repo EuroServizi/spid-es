@@ -5,7 +5,6 @@ require "uri"
 require "digest/md5"
 require "nokogiri"
 require_relative "../xml_security_new" #fa il require della nokogiri
-require "uuid"
 
 # Class to return SP metadata based on the settings requested.
 # Return this XML in a controller, then give that URL to the the 
@@ -50,7 +49,7 @@ module Spid
         #Tolto per non far cambiare sempre il metadata
         #uuid = "_" + UUID.new.generate
         #genero l'id come hash dell'entityID
-        uuid = "_" + settings.issuer.hash.abs.to_s
+        uuid = "_"+Digest::MD5.hexdigest(settings.issuer)
         self.uuid = uuid
         root.attributes["ID"] = uuid
 
