@@ -235,16 +235,23 @@ module Spid
             "contactType" => "other",
             "spid:entityType" => "spid:aggregator"
           }
-          company = contact_person_aggregatore.add_element "md:Company"
-          company.text = settings.hash_aggregatore['soggetto_aggregatore']
+          unless settings.hash_aggregatore['soggetto_aggregatore'].blank?
+            company = contact_person_aggregatore.add_element "md:Company"
+            company.text = settings.hash_aggregatore['soggetto_aggregatore']
+          end
 
-          email_address = contact_person_aggregatore.add_element "md:EmailAddress"
-          email_address.text = settings.hash_aggregatore['email_address']
+          unless settings.hash_aggregatore['email_aggregatore'].blank?
+            email_address = contact_person_aggregatore.add_element "md:EmailAddress"
+            email_address.text = settings.hash_aggregatore['email_aggregatore']
+          end
 
-          telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
-          telephone_number.text = settings.hash_aggregatore['telephone_number']
+          unless settings.hash_aggregatore['telefono_aggregatore'].blank?
+            telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
+            telephone_number.text = settings.hash_aggregatore['telefono_aggregatore']
+          end
 
           extensions_aggregatore = contact_person_aggregatore.add_element "md:Extensions"
+
           unless settings.hash_aggregatore['piva_aggregatore'].blank?
             vat_number_aggregatore = extensions_aggregatore.add_element "spid:VATNumber"
             vat_number_aggregatore.text = settings.hash_aggregatore['piva_aggregatore']
