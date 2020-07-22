@@ -223,7 +223,7 @@ module Spid
             "xml:lang" => "it"
         }
     
-        org_display_name.text = settings.organization['org_display_name']+(settings.aggregato ? " tramite #{settings.hash_aggregatore['soggetto_aggregatore']}" : '')
+        org_display_name.text = settings.organization['org_display_name'] #+(settings.aggregato ? " tramite #{settings.hash_aggregatore['soggetto_aggregatore']}" : '')
         org_url = organization.add_element "md:OrganizationURL", {
             "xml:lang" => "it"
         }
@@ -238,15 +238,29 @@ module Spid
           company = contact_person_aggregatore.add_element "md:Company"
           company.text = settings.hash_aggregatore['soggetto_aggregatore']
 
-          extensions_aggregatore = contact_person_aggregatore.add_element "md:Extensions"
-          vat_number_aggregatore = extensions_aggregatore.add_element "spid:VATNumber"
-          vat_number_aggregatore.text = settings.hash_aggregatore['piva_aggregatore']
-          
-          ipa_code_aggregatore = extensions_aggregatore.add_element "spid:IPACode"
-          ipa_code_aggregatore.text = settings.hash_aggregatore['cipa_aggregatore']
+          email_address = contact_person_aggregatore.add_element "md:EmailAddress"
+          email_address.text = settings.hash_aggregatore['email_address']
 
-          fiscal_code_aggregatore = extensions_aggregatore.add_element "spid:FiscalCode"
-          fiscal_code_aggregatore.text = settings.hash_aggregatore['cf_aggregatore']
+          telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
+          telephone_number.text = settings.hash_aggregatore['telephone_number']
+
+          extensions_aggregatore = contact_person_aggregatore.add_element "md:Extensions"
+          unless settings.hash_aggregatore['piva_aggregatore'].blank?
+            vat_number_aggregatore = extensions_aggregatore.add_element "spid:VATNumber"
+            vat_number_aggregatore.text = settings.hash_aggregatore['piva_aggregatore']
+          end
+
+          unless settings.hash_aggregatore['cipa_aggregatore'].blank?
+            ipa_code_aggregatore = extensions_aggregatore.add_element "spid:IPACode"
+            ipa_code_aggregatore.text = settings.hash_aggregatore['cipa_aggregatore']
+          end
+
+          unless settings.hash_aggregatore['cf_aggregatore'].blank?
+            fiscal_code_aggregatore = extensions_aggregatore.add_element "spid:FiscalCode"
+            fiscal_code_aggregatore.text = settings.hash_aggregatore['cf_aggregatore']
+          end 
+
+          tipo_aggregatore = extensions_aggregatore.add_element "spid:PublicServicesFullAggregator"
 
           contact_person_aggregato = root.add_element "md:ContactPerson", {
             "contactType" => "other",
