@@ -275,9 +275,6 @@ module Spid
             "spid:entityType" => "spid:aggregated"
           }
 
-          company = contact_person_aggregato.add_element "md:Company"
-          company.text = settings.organization['org_name']
-
           extensions_aggregato = contact_person_aggregato.add_element "md:Extensions"
           unless settings.hash_aggregatore['soggetto_aggregato']['vat_number'].blank?
             vat_number_aggregato = extensions_aggregato.add_element "spid:VATNumber"
@@ -291,6 +288,10 @@ module Spid
             fiscal_code_aggregato = extensions_aggregato.add_element "spid:FiscalCode" 
             fiscal_code_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['fiscal_code']
           end
+
+          company = contact_person_aggregato.add_element "md:Company"
+          company.text = settings.organization['org_name']
+          
         end
 
         #meta_doc << REXML::XMLDecl.new(version='1.0', encoding='UTF-8')
