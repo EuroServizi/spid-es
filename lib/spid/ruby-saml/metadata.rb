@@ -235,20 +235,6 @@ module Spid
             "contactType" => "other",
             "spid:entityType" => "spid:aggregator"
           }
-          unless settings.hash_aggregatore['soggetto_aggregatore'].blank?
-            company = contact_person_aggregatore.add_element "md:Company"
-            company.text = settings.hash_aggregatore['soggetto_aggregatore']
-          end
-
-          unless settings.hash_aggregatore['email_aggregatore'].blank?
-            email_address = contact_person_aggregatore.add_element "md:EmailAddress"
-            email_address.text = settings.hash_aggregatore['email_aggregatore']
-          end
-
-          unless settings.hash_aggregatore['telefono_aggregatore'].blank?
-            telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
-            telephone_number.text = settings.hash_aggregatore['telefono_aggregatore']
-          end
 
           extensions_aggregatore = contact_person_aggregatore.add_element "md:Extensions"
 
@@ -269,10 +255,26 @@ module Spid
 
           tipo_aggregatore = extensions_aggregatore.add_element "spid:PublicServicesFullAggregator"
 
+          unless settings.hash_aggregatore['soggetto_aggregatore'].blank?
+            company = contact_person_aggregatore.add_element "md:Company"
+            company.text = settings.hash_aggregatore['soggetto_aggregatore']
+          end
+
+          unless settings.hash_aggregatore['email_aggregatore'].blank?
+            email_address = contact_person_aggregatore.add_element "md:EmailAddress"
+            email_address.text = settings.hash_aggregatore['email_aggregatore']
+          end
+
+          unless settings.hash_aggregatore['telefono_aggregatore'].blank?
+            telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
+            telephone_number.text = settings.hash_aggregatore['telefono_aggregatore']
+          end
+
           contact_person_aggregato = root.add_element "md:ContactPerson", {
             "contactType" => "other",
             "spid:entityType" => "spid:aggregated"
           }
+
           company = contact_person_aggregato.add_element "md:Company"
           company.text = settings.organization['org_name']
 
