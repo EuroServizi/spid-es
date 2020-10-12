@@ -276,21 +276,34 @@ module Spid
           }
 
           extensions_aggregato = contact_person_aggregato.add_element "md:Extensions"
-          unless settings.hash_aggregatore['soggetto_aggregato']['vat_number'].blank?
-            vat_number_aggregato = extensions_aggregato.add_element "spid:VATNumber"
-            vat_number_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['vat_number']
-          end
           unless settings.hash_aggregatore['soggetto_aggregato']['ipa_code'].blank?
             ipa_code_aggregato = extensions_aggregato.add_element "spid:IPACode" 
             ipa_code_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['ipa_code']
+          end
+          unless settings.hash_aggregatore['soggetto_aggregato']['vat_number'].blank?
+            vat_number_aggregato = extensions_aggregato.add_element "spid:VATNumber"
+            vat_number_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['vat_number']
           end
           unless settings.hash_aggregatore['soggetto_aggregato']['fiscal_code'].blank?
             fiscal_code_aggregato = extensions_aggregato.add_element "spid:FiscalCode" 
             fiscal_code_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['fiscal_code']
           end
+          unless settings.hash_aggregatore['soggetto_aggregato']['ipa_code'].blank?
+            tipo_aggregato = extensions_aggregato.add_element "spid:Public" 
+          end
 
           company = contact_person_aggregato.add_element "md:Company"
           company.text = settings.organization['org_name']
+
+          unless settings.hash_aggregatore['soggetto_aggregato']['email_address'].blank?
+            email_address = contact_person_aggregato.add_element "md:EmailAddress"
+            email_address.text = settings.hash_aggregatore['soggetto_aggregato']['email_address']
+          end
+
+          unless settings.hash_aggregatore['soggetto_aggregato']['telephone_number'].blank?
+            telephone_number = contact_person_aggregato.add_element "md:TelephoneNumber"
+            telephone_number.text = settings.hash_aggregatore['soggetto_aggregato']['telephone_number']
+          end
           
         end
 
