@@ -256,18 +256,18 @@ module Spid
           tipo_aggregatore = extensions_aggregatore.add_element "spid:PublicServicesFullAggregator"
 
           unless settings.hash_aggregatore['soggetto_aggregatore'].blank?
-            company = contact_person_aggregatore.add_element "md:Company"
-            company.text = settings.hash_aggregatore['soggetto_aggregatore']
+            company_aggregatore = contact_person_aggregatore.add_element "md:Company"
+            company_aggregatore.text = settings.hash_aggregatore['soggetto_aggregatore']
           end
 
           unless settings.hash_aggregatore['email_aggregatore'].blank?
-            email_address = contact_person_aggregatore.add_element "md:EmailAddress"
-            email_address.text = settings.hash_aggregatore['email_aggregatore']
+            email_address_aggregatore = contact_person_aggregatore.add_element "md:EmailAddress"
+            email_address_aggregatore.text = settings.hash_aggregatore['email_aggregatore']
           end
 
           unless settings.hash_aggregatore['telefono_aggregatore'].blank?
-            telephone_number = contact_person_aggregatore.add_element "md:TelephoneNumber"
-            telephone_number.text = settings.hash_aggregatore['telefono_aggregatore']
+            telephone_number_aggregatore = contact_person_aggregatore.add_element "md:TelephoneNumber"
+            telephone_number_aggregatore.text = settings.hash_aggregatore['telefono_aggregatore']
           end
 
           contact_person_aggregato = root.add_element "md:ContactPerson", {
@@ -292,17 +292,17 @@ module Spid
             tipo_aggregato = extensions_aggregato.add_element "spid:Public" 
           end
 
-          company = contact_person_aggregato.add_element "md:Company"
-          company.text = settings.organization['org_name']
+          company_aggregato = contact_person_aggregato.add_element "md:Company"
+          company_aggregato.text = settings.organization['org_name']
 
           unless settings.hash_aggregatore['soggetto_aggregato']['email_address'].blank?
-            email_address = contact_person_aggregato.add_element "md:EmailAddress"
-            email_address.text = settings.hash_aggregatore['soggetto_aggregato']['email_address']
+            email_address_aggregato = contact_person_aggregato.add_element "md:EmailAddress"
+            email_address_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['email_address']
           end
 
           unless settings.hash_aggregatore['soggetto_aggregato']['telephone_number'].blank?
-            telephone_number = contact_person_aggregato.add_element "md:TelephoneNumber"
-            telephone_number.text = settings.hash_aggregatore['soggetto_aggregato']['telephone_number']
+            telephone_number_aggregato = contact_person_aggregato.add_element "md:TelephoneNumber"
+            telephone_number_aggregato.text = settings.hash_aggregatore['soggetto_aggregato']['telephone_number']
           end
           
         end
