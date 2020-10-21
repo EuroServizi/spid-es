@@ -53,9 +53,9 @@ module Spid::Saml
       end
 
       unless @settings.issuer.blank?
-        issuer = root.add_element "saml:Issuer"
-        #l'attributo NameQualifier deve essere presente, non rispetta saml...e deve essere uguale al valore dell'issuer
-        issuer.attributes['NameQualifier'] = @settings.issuer
+        issuer = root.add_element "saml:Issuer", { "xmlns:saml" => "urn:oasis:names:tc:SAML:2.0:assertion" }
+        #l'attributo NameQualifier deve essere presente, non rispetta saml...
+        issuer.attributes['NameQualifier'] = ( @settings.aggregato ? @settings.sp_name_qualifier : @settings.issuer ) 
         issuer.attributes['Format'] = "urn:oasis:names:tc:SAML:2.0:nameid-format:entity"
         issuer.text = @settings.issuer #questo valore deve essere uguale al #entityID dei metadata che usa @settings.issuer
       end
@@ -84,7 +84,7 @@ module Spid::Saml
       # the IdP will choose default rules for authentication.  (Shibboleth IdP)
       if @settings.authn_context != nil
         requested_context = root.add_element "saml2p:RequestedAuthnContext", { 
-          "Comparison" => "minimum"
+          "Comparison" => "exact"
         }
         context_class = []
         @settings.authn_context.each_with_index{ |context, index|
