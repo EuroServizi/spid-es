@@ -84,7 +84,7 @@ module Spid::Saml
       # the IdP will choose default rules for authentication.  (Shibboleth IdP)
       if @settings.authn_context != nil
         requested_context = root.add_element "saml2p:RequestedAuthnContext", { 
-          "Comparison" => "exact"
+          "Comparison" => "minimum"
         }
         context_class = []
         @settings.authn_context.each_with_index{ |context, index|
