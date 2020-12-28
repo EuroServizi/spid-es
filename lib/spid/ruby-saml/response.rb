@@ -248,7 +248,9 @@ module Spid
             if settings
               idp_metadata = Spid::Saml::Metadata.new(settings).get_idp_metadata
             end
-            
+            #verifico se sono stati scaricati i metadati dell'idp
+            return false if validate_metadata_idp(soft) == false
+
             #carico nei setting l'idp_entity_id  
             entity_descriptor_element = REXML::XPath.first(idp_metadata,"/EntityDescriptor")
             if !entity_descriptor_element.nil? 
@@ -334,6 +336,11 @@ module Spid
         end
 
 
+        #validate presenza dei metadata per idp
+        def validate_metadata_idp(soft=true)
+          return (soft ? false : validation_error("Metadata idp non raggiungibile per #{settings.idp_entity_id}")) if document.blank?
+          true
+        end
 
         # Validates the SAML version (2.0)
         # If fails, the error is added to the errors array.
