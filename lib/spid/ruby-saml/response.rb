@@ -235,6 +235,12 @@ module Spid
           return  node_cond_not_on_or_after.attributes["NotOnOrAfter"] unless node_cond_not_on_or_after.blank?
         end
 
+        #ricavo l'issue instant della request
+        def assertion_authninstant
+          node_authn_statement = xpath_first_from_signed_assertion('/a:AuthnStatement')
+          return  node_authn_statement.attributes["AuthnInstant"] unless node_authn_statement.blank?
+        end
+
         private
 
         def validation_error(message)
