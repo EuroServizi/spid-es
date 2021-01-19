@@ -21,6 +21,8 @@ module Spid
 
       attr_accessor :uuid
 
+      @@cache = {}
+
       def initialize(settings=nil)
         if settings
           @settings = settings
@@ -392,7 +394,6 @@ module Spid
         end
         
         meta_doc = get_idp_metadata
-        
         return nil unless meta_doc
         # first try GET (REDIRECT)
         sso_element = REXML::XPath.first(meta_doc, "/EntityDescriptor/IDPSSODescriptor/#{service}[@Binding='#{HTTP_GET}']")
@@ -449,20 +450,26 @@ module Spid
       # returns a REXML document of the metadata
       def get_idp_metadata
         return false if @settings.idp_metadata.nil?
-      
         # Look up the metdata in cache first
         id = Digest::MD5.hexdigest(@settings.idp_metadata)
-        response = fetch(@settings.idp_metadata)
-        #meta_text = response.body
-        #testo_response = meta_text.sub!(' xmlns:xml="http://www.w3.org/XML/1998/namespace"', '') da errori
-        #uso nokogiri per cercare il certificato, uso la funzione che rimuove tutti i namespace 
-        doc_noko = Nokogiri::XML(response.body.gsub(/\n/, "").gsub(/\t/, "")) #modifica per poste
-        doc_noko.remove_namespaces!
+        unless @@cache[id].blank?
+          Logging.debug "IdP metadata cache used for #{@settings.idp_metadata}"
+          doc_noko = @@cache[id] 
+        else #save in cache
+          response = fetch(@settings.idp_metadata)
+          #meta_text = response.body
+          #testo_response = meta_text.sub!(' xmlns:xml="http://www.w3.org/XML/1998/namespace"', '') da errori
+          #uso nokogiri per cercare il certificato, uso la funzione che rimuove tutti i namespace 
+          doc_noko = Nokogiri::XML(response.body.gsub(/\n/, "").gsub(/\t/, "")) #modifica per poste
+          doc_noko.remove_namespaces!
+          #save
+          @@cache[id] = doc_noko
+        end
         extract_certificate(doc_noko)
         doc_rexml = REXML::Document.new(doc_noko.to_xml)
-
         return doc_rexml
 
+        
         # USE OF CACHE WITH CERTIFICATE
         # lookup = @cache.read(id)
         # if lookup != nil
