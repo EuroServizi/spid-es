@@ -514,11 +514,12 @@ module Spid
 
             return true if settings.assertion_consumer_service_url.nil? || settings.assertion_consumer_service_url.empty?
 
-            unless Spid::Saml::Utils.uri_match?(destination, settings.assertion_consumer_service_url)
-              # error_msg = "The response was received at #{destination} instead of #{settings.assertion_consumer_service_url}"
-              # return append_error(error_msg)
-              return soft ? false : validation_error("The response was received at #{destination} instead of #{settings.assertion_consumer_service_url}")
-            end
+            #DA-RIPRISTINARE!
+            # unless Spid::Saml::Utils.uri_match?(destination, settings.assertion_consumer_service_url)
+            #   # error_msg = "The response was received at #{destination} instead of #{settings.assertion_consumer_service_url}"
+            #   # return append_error(error_msg)
+            #   return soft ? false : validation_error("The response was received at #{destination} instead of #{settings.assertion_consumer_service_url}")
+            # end
 
             true
         end
