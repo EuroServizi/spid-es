@@ -291,7 +291,7 @@ module Spid
             return true if settings.skip_validation == true
             
             # document.validte populates the idp_cert
-            return false if document.validate_document(get_fingerprint, soft) == false
+            #return false if document.validate_document(get_fingerprint, soft) == false #DA TOGLIERE, FIX PER DOPPIO CERTIFICATO POSTE
             
             # validate response code
             return false if success? == false  
