@@ -291,7 +291,7 @@ module Spid
             return true if settings.skip_validation == true
             
             # document.validte populates the idp_cert
-            #return false if document.validate_document(get_fingerprint, soft) == false #DA TOGLIERE, FIX PER DOPPIO CERTIFICATO POSTE
+            return false if document.validate_document(get_fingerprint, soft) == false
             
             # validate response code
             return false if success? == false  
@@ -616,15 +616,25 @@ module Spid
 
         def get_fingerprint
             idp_metadata = Spid::Saml::Metadata.new(settings).get_idp_metadata
-            
             if settings.idp_cert
-              cert_text = Base64.decode64(settings.idp_cert)
-              cert = OpenSSL::X509::Certificate.new(cert_text)
-              Digest::SHA2.hexdigest(cert.to_der).upcase.scan(/../).join(":")
+              #controllo se ho n certificati
+              if settings.idp_cert.length > 1
+                array_fingerprint = []
+                settings.idp_cert.each{|cert_metadata_ipd|
+                  cert_text = Base64.decode64(cert_metadata_ipd)
+                  cert = OpenSSL::X509::Certificate.new(cert_text)
+                  array_fingerprint << Digest::SHA2.hexdigest(cert.to_der).upcase.scan(/../).join(":")
+                }
+                return array_fingerprint
+              else
+                cert_text = Base64.decode64(settings.idp_cert[0])
+                cert = OpenSSL::X509::Certificate.new(cert_text)
+                return [Digest::SHA2.hexdigest(cert.to_der).upcase.scan(/../).join(":")]
+              end
+              
             else
-              settings.idp_cert_fingerprint
+              return [settings.idp_cert_fingerprint]
             end
-            
         end
 
         def validate_conditions(soft = true)

@@ -511,18 +511,20 @@ module Spid
         #ricerco il certificato con nokogiri
         # pull out the x509 tag
         x509 = meta_doc.xpath("//EntityDescriptor//IDPSSODescriptor//KeyDescriptor//KeyInfo//X509Data//X509Certificate")
-
-        #x509 = REXML::XPath.first(meta_doc, "/md:EntityDescriptor/md:IDPSSODescriptor"+"/md:KeyDescriptor"+"/ds:KeyInfo/ds:X509Data/ds:X509Certificate")
-        # If the IdP didn't specify the use attribute
-        if x509.nil?
-          x509 = meta_doc.xpath("//EntityDescriptor//IDPSSODescriptor//KeyDescriptor//KeyInfo//X509Data//X509Certificate")
-          # x509 = REXML::XPath.first(meta_doc, 
-          #       "/EntityDescriptor/IDPSSODescriptor" +
-          #     "/KeyDescriptor" +
-          #     "/ds:KeyInfo/ds:X509Data/ds:X509Certificate"
-          #   )
+        if !x509.nil? 
+          if x509.length > 1
+            @settings.idp_cert = []
+            x509.children.each{|child_cert|
+              @settings.idp_cert << child_cert.to_s.gsub(/\n/, "").gsub(/\t/, "")
+            }
+          else #un array con un campo
+            @settings.idp_cert = [x509.children[0].to_s.gsub(/\n/, "").gsub(/\t/, "")]
+          end
+        else #se nil uso il certificato in keyinfo, non dovrebbe mai accadere
+          x509 = meta_doc.xpath("//EntityDescriptor//Signature//KeyInfo//X509Data//X509Certificate") 
         end
-        @settings.idp_cert = x509.children.to_s.gsub(/\n/, "").gsub(/\t/, "")
+        #se ci sono n certificati ritorno array
+        @settings.idp_cert
       end
 
       # construct the parameter list on the URL and return

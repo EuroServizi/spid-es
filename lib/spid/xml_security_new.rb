@@ -200,7 +200,7 @@ module Spid
       def signed_element_id
         @signed_element_id ||= extract_signed_element_id
       end
-
+      #idp_cert_fingerprint e' un array di fingerprint
       def validate_document(idp_cert_fingerprint, soft = true, options = {})
         # get cert from response
         cert_element = REXML::XPath.first(
@@ -226,7 +226,11 @@ module Spid
           fingerprint = fingerprint_alg.hexdigest(cert.to_der)
 
           # check cert matches registered idp cert
-          if fingerprint != idp_cert_fingerprint.gsub(/[^a-zA-Z0-9]/,"").downcase
+          trovato = false
+          idp_cert_fingerprint.each{|fingerprint_from_idp|
+            trovato = true if fingerprint_from_idp.gsub(/[^a-zA-Z0-9]/,"").downcase == fingerprint
+          }
+          if !trovato
             @errors << "Fingerprint mismatch"
             return append_error("Fingerprint mismatch", soft)
           end
